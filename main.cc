@@ -2,9 +2,10 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 20-03-2025
+//Last edited: 27-03-2025
 
 #include <iostream>
+#include "settings.h"
 
 //Options menu for the benchmark.
 void menu()
