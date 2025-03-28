@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <filesystem>
 #include "settings.h"
 
 Settings::Settings() 
@@ -48,13 +49,30 @@ int Settings::setPath(enum Target file)
 	std::string path;
 	std::cin >> path;
 
-	std::fstream targetPath;
-	targetPath.open(path);
-	if (!targetPath.is_open())
+	//switch / with \ for the exists function
+	for(int i = 0; i < path.length(); i++)
+	{
+		if(path[i] == '\\')
+		{
+			path[i] = '/';
+		}//if
+	}//for
+
+	while (!std::filesystem::exists(path))
 	{
 		std::cerr << "Could not find file, please try again" << std::endl;
-		return -1;
-	}
+		std::cout << "path to file: ";
+		std::cin >> path;
+
+		//switch / with \ for the open function
+		for(int i = 0; i < path.length(); i++)
+		{
+			if(path[i] == '\\')
+			{
+				path[i] = '/';
+			}//if
+		}//for
+	}//while
 
 	//write to correct target
 	switch(file)
@@ -120,14 +138,14 @@ int Settings::savePath(enum Target file, std::string path)
 	readFile.close();
 
 	//save correct path
-	editSettings[file] = path + "\n";
+	editSettings[file] = path;
 
 	//overwrite old settings file
 	std::ofstream writeFile;
 	writeFile.open("settings");
 	for (int i = 0; i < settingsCount; i++)
 	{
-		writeFile << editSettings[i];
+		writeFile << editSettings[i] + '\n';
 	}//for
 	writeFile.close();
 	return 0;

@@ -12,23 +12,24 @@ void menu(Settings &CurrentSettings)
 {
 	//Basic menu loop
 	bool runProgram = true;
-	std::cout << "| ButtonCheck: Netcode benchmark for competitive multiplayer games" << std::endl
-	<< "| Made by Michiel van der Bijl" << std::endl
-	<< "|" << std::endl
-	<< "| Path to game client:	" << CurrentSettings.getPath(CLIENT) << std::endl
-	<< "| Path to game server:	" << CurrentSettings.getPath(SERVER) << std::endl
-	<< "| Path to player 1 input: " << CurrentSettings.getPath(PLAYERINPUT1) << std::endl
-	<< "| Path to player 2 input: " << CurrentSettings.getPath(PLAYERINPUT2) << std::endl
-	<< "__________________________________________________________________" << std::endl
-	<< "1: set game client" << std::endl
-	<< "2: set game server" << std::endl
-	<< "3: set player 1 input" << std::endl
-	<< "4: set player 2 input" << std::endl
-	<< "5: more options" << std::endl
-	<< "6: run benchmark" << std::endl
-	<< "7: end program" << std::endl;
 	while (runProgram)
 	{
+		std::cout << "| ButtonCheck: Netcode benchmark for competitive multiplayer games" << std::endl
+		<< "| Made by Michiel van der Bijl" << std::endl
+		<< "|" << std::endl
+		<< "| Path to game client:	" << CurrentSettings.getPath(CLIENT) << std::endl
+		<< "| Path to game server:	" << CurrentSettings.getPath(SERVER) << std::endl
+		<< "| Path to player 1 input: " << CurrentSettings.getPath(PLAYERINPUT1) << std::endl
+		<< "| Path to player 2 input: " << CurrentSettings.getPath(PLAYERINPUT2) << std::endl
+		<< "__________________________________________________________________" << std::endl
+		<< "1: set game client" << std::endl
+		<< "2: set game server" << std::endl
+		<< "3: set player 1 input" << std::endl
+		<< "4: set player 2 input" << std::endl
+		<< "5: more options" << std::endl
+		<< "6: run benchmark" << std::endl
+		<< "7: end program" << std::endl;
+		std::cout << "Choose option: ";
 		std::string input;
 		std::cin >> input;
 		if (input == "1")
