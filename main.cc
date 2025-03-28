@@ -2,23 +2,23 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 27-03-2025
+//Last edited: 28-03-2025
 
 #include <iostream>
 #include "settings.h"
 
 //Options menu for the benchmark.
-void menu()
+void menu(Settings &CurrentSettings)
 {
 	//Basic menu loop
 	bool runProgram = true;
 	std::cout << "| ButtonCheck: Netcode benchmark for competitive multiplayer games" << std::endl
 	<< "| Made by Michiel van der Bijl" << std::endl
 	<< "|" << std::endl
-	<< "| Path to game client:	" << "[temp]" << std::endl
-	<< "| Path to game server:	" << "[temp]" << std::endl
-	<< "| Path to player 1 input: " << "[temp]" << std::endl
-	<< "| Path to player 2 input: " << "[temp]" << std::endl
+	<< "| Path to game client:	" << CurrentSettings.getPath(CLIENT) << std::endl
+	<< "| Path to game server:	" << CurrentSettings.getPath(SERVER) << std::endl
+	<< "| Path to player 1 input: " << CurrentSettings.getPath(PLAYERINPUT1) << std::endl
+	<< "| Path to player 2 input: " << CurrentSettings.getPath(PLAYERINPUT2) << std::endl
 	<< "__________________________________________________________________" << std::endl
 	<< "1: set game client" << std::endl
 	<< "2: set game server" << std::endl
@@ -33,16 +33,16 @@ void menu()
 		std::cin >> input;
 		if (input == "1")
 		{
-			//setPath
+			CurrentSettings.setPath(CLIENT);
 		}else if (input == "2")
 		{
-			//setPath
+			CurrentSettings.setPath(SERVER);
 		}else if (input == "3")
 		{
-			//setPath
+			CurrentSettings.setPath(PLAYERINPUT1);
 		}else if (input == "4")
 		{
-			//setPath
+			CurrentSettings.setPath(PLAYERINPUT2);
 		}else if (input == "5")
 		{
 			//subMenu
@@ -59,6 +59,7 @@ void menu()
 //Do any possibly needed initialization, then start the menu.
 int main()
 {
-	menu();
+	Settings CurrentSettings;
+	menu(CurrentSettings);
 	return 0;
 }//main

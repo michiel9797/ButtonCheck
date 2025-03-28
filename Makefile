@@ -17,3 +17,4 @@ main.o: main.cc
 clean:
 	rm -f $(SOURCE) $(OUT)
 	rm -f a.out
+	rm -f settings

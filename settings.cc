@@ -2,7 +2,7 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 27-03-2025
+//Last edited: 28-03-2025
 
 #include <iostream>
 #include <fstream>
@@ -21,23 +21,23 @@ Settings::Settings()
 
 		for (int i = 0; i < settingsCount; i++)
 		{
-			newSettings << "NULL\n";
+			newSettings << "None\n";
 		}//for
 		newSettings.close();
 
 		//set current paths to NULL
-		clientPath = "NULL";
-		serverPath = "NULL";
-		playerInput1Path = "NULL";
-		playerInput2Path = "NULL";
+		clientPath = "None";
+		serverPath = "None";
+		playerInput1Path = "None";
+		playerInput2Path = "None";
 		return;
 	}
 
 	//if it does exist, load in the paths
-	loadPath(CLIENT);
-	loadPath(SERVER);
-	loadPath(PLAYERINPUT1);
-	loadPath(PLAYERINPUT2);
+	clientPath = loadPath(CLIENT);
+	serverPath = loadPath(SERVER);
+	playerInput1Path = loadPath(PLAYERINPUT1);
+	playerInput2Path = loadPath(PLAYERINPUT2);
 	return;
 }//constructor
 
@@ -151,9 +151,6 @@ std::string Settings::loadPath(enum Target file)
 		getline(settingsFile, loadSettings[i]);
 	}//for
 	settingsFile.close();
-
-	//ignore the /n
-	loadSettings[file].pop_back();
 
 	//return target path
 	return loadSettings[file];
