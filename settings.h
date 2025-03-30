@@ -2,19 +2,21 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 27-03-2025
+//Last edited: 29-03-2025
 
 #ifndef SettingsH
 #define SettingsH
 
-enum Target {
+enum Target 
+{
 	CLIENT,
 	SERVER,
 	PLAYERINPUT1,
 	PLAYERINPUT2
 };//target
 
-class Settings {
+class Settings 
+{
 	public:
 		//constructor, fetches all the saved settings from the settings file
 		//and makes one if it doesn't exist yet
