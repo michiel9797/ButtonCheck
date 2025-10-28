@@ -20,7 +20,7 @@ class Benchmark
 	private:
 		//execute a simulated perfect run to gather correct
 		//reference data and the cpu usage baseline
-		int simulateRun(Settings currentSettings);
+		int emulateRun(Settings currentSettings);
 
 };//benchmark
 

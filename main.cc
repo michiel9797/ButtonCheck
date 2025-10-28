@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include "settings.h"
+#include "benchmark.h"
 
 //Options menu for the benchmark.
 void menu(Settings &CurrentSettings)
@@ -14,6 +15,7 @@ void menu(Settings &CurrentSettings)
 	bool runProgram = true;
 	while (runProgram)
 	{
+		std::cout << std::endl;
 		std::cout << "| ButtonCheck: Netcode benchmark for competitive multiplayer games" << std::endl
 		<< "| Made by Michiel van der Bijl" << std::endl
 		<< "|" << std::endl
@@ -34,22 +36,29 @@ void menu(Settings &CurrentSettings)
 		std::cin >> input;
 		if (input == "1")
 		{
+			std::cout << std::endl;
 			CurrentSettings.setPath(CLIENT);
 		}else if (input == "2")
 		{
+			std::cout << std::endl;
 			CurrentSettings.setPath(SERVER);
 		}else if (input == "3")
 		{
+			std::cout << std::endl;
 			CurrentSettings.setPath(PLAYERINPUT1);
 		}else if (input == "4")
 		{
+			std::cout << std::endl;
 			CurrentSettings.setPath(PLAYERINPUT2);
 		}else if (input == "5")
 		{
+			std::cout << std::endl;
 			//subMenu
 		}else if (input == "6")
 		{
-			//runBenchmark
+			std::cout << std::endl;
+			Benchmark benchy;
+			benchy.startBenchmark(CurrentSettings);
 		}else if (input == "7")
 		{
 			runProgram = false;

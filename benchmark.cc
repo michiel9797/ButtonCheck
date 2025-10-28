@@ -12,59 +12,79 @@
 
 namespace bp = boost::process;
 
+Benchmark::~Benchmark()
+{
+	std::remove("emulatedRun");
+}//~Benchmark
+
 int Benchmark::startBenchmark(Settings currentSettings)
 {
-	if (!simulateRun(currentSettings))
+	if (!emulateRun(currentSettings))
 	{
 		return -1;
 	}//if
-
+	return 0;
 }//startBenchmark
 
-int Benchmark::simulateRun(Settings currentSettings)
+int Benchmark::emulateRun(Settings currentSettings)
 {
 	//to read the game state data and other communications from
-	bp::ipstream is;
-	boost::process::v1::filesystem::path path = currentSettings.getPath(CLIENT);
-	std::error_code error;
+	bp::ipstream pipe_stream;
 
 	//run the client
-	bp::child s(path, "SIMULATE " + currentSettings.getPath(PLAYERINPUT1) + " " + 
-	currentSettings.getPath(PLAYERINPUT2), bp::std_out > is, error);
-
-	//in case the client launch failed
-	if(!error)
-	{
-		std::cerr << "Client launch failed with error code: " << error << std::endl;
-		return -1;
-	}//if
+	bp::child s(
+		currentSettings.getPath(CLIENT), 
+		"EMULATE", 
+		currentSettings.getPath(PLAYERINPUT1), 
+		currentSettings.getPath(PLAYERINPUT2), 
+		bp::std_out > pipe_stream
+	);
 
 	std::string received;
+	std::ofstream output("emulatedRun", std::ios::app); 	//make an output file for the received data
+	
+	//shows how much time (assuming 60 fps on the underlaying program) has passed so far 
+	int timer = 0;
+	int frames = 0;
 	bool connected = false;
-	std::fstream output("simulatedRun", ios::app); 	//make an output file for the received data
 
 	//as long as the booted process is running, receive its output
-	while(s.running() && std::getline(is, received) && !received.empty())
+	while(std::getline(pipe_stream, received))
 	{
 		//if this is the first message
 		if(!connected)
 		{
 			//check for the correct identification
-			if (received == "SIMULATE START")
+			if (received == "EMULATE START")
 			{
 				connected = true;
+				std::cout << "Running emulation" << std::endl;
 			} else { //if it fails, terminate it
-				s.request_exit();
-				s.wait();
-				std::cerr << "Client did not identify correctly";
+				s.terminate();
+				std::cerr << "Client did not identify correctly\n";
 				return -1;
 			}//else
 		} else { //if the identification went correctly
-			output << received << "\n";
+			if (!received.empty())
+			{
+				frames++;
+				output << received << "\n";
+			}//if
 		}//else
+		if(frames >= 60)
+		{
+			frames = 0;
+			timer++;
+			std::cout << "     " << '\r';
+			std::cout << timer/60 << 'm' << timer%60 << 's' << '\r';
+			std::cout.flush();
+
+		}//if
 	}//while
 
 	s.wait();
+
+	std::cout << std::endl;
 
 	return 0;
 }//simulatedRun
