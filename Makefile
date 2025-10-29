@@ -1,21 +1,17 @@
-OBJS	= settings.cc benchmark.cc main.cc
-SOURCE	= settings.o benchark.o main.o
-HEADER	=
-OUT	= ButtonCheck
-CC	= c++
-FLAGS	= -Wall -Weffc++ -std=c++17 -O2 -Iinclude
+OBJS		= settings.o benchmark.o main.o
+SOURCE		= settings.cc benchmark.cc main.cc
+OUT		= ButtonCheck
+CC		= c++
+FLAGS		= -Wall -Weffc++ -std=c++17 -O2 -Iinclude
+LDLFLAGS 	= libtuntap/build/lib/libtuntap++.a
+INCLUDES	= -Ilibtuntap/build
+
 
 all: $(OBJS)
-	$(CC) -g $(OBJS) -o $(OUT) $(LFLAGS)
+	$(CC) -g $(OBJS) -o $(OUT) $(LDLFLAGS)
 
-settings.o: settings.cc
-	$(CC) $(FLAGS) settings.cc
-
-benchmark.o: benchmark.cc
-	$(CC) $(FLAGS) benchmark.cc
-
-main.o: main.cc
-	$(CC) $(FLAGS) main.cc
+%.o: %.cc
+	$(CC) $(FLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	rm -f $(SOURCE) $(OUT)

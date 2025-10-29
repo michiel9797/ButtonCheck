@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <boost/process.hpp>
 #include "benchmark.h"
+#include "libtuntap/tuntap.h"
 
 namespace bp = boost::process;
 
@@ -19,11 +20,7 @@ Benchmark::~Benchmark()
 
 int Benchmark::startBenchmark(Settings currentSettings)
 {
-	if (!emulateRun(currentSettings))
-	{
-		return -1;
-	}//if
-	return 0;
+	return emulateRun(currentSettings);
 }//startBenchmark
 
 int Benchmark::emulateRun(Settings currentSettings)
