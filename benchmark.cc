@@ -13,27 +13,40 @@
 
 namespace bp = boost::process;
 
+Benchmark::Benchmark(Settings CurrentSettings)
+{
+
+	saveEmulation = CurrentSettings.getSetting(SAVEEMULATION);
+}//Benchmark
+
 Benchmark::~Benchmark()
 {
-	std::remove("emulatedRun");
+	if(saveEmulation == "n")
+	{
+		std::remove("emulatedRun");
+	}//if
 }//~Benchmark
 
-int Benchmark::startBenchmark(Settings currentSettings)
+int Benchmark::startBenchmark(Settings CurrentSettings)
 {
-	return emulateRun(currentSettings);
+	if(CurrentSettings.getSetting(SKIPEMULATION) != "y")
+		emulateRun(CurrentSettings);
+	if(CurrentSettings.getSetting(SKIPSIMULATION) != "y")
+		simulateRun(CurrentSettings);
+	return 0;
 }//startBenchmark
 
-int Benchmark::emulateRun(Settings currentSettings)
+int Benchmark::emulateRun(Settings CurrentSettings)
 {
 	//to read the game state data and other communications from
 	bp::ipstream pipe_stream;
 
 	//run the client
 	bp::child s(
-		currentSettings.getPath(CLIENT), 
+		CurrentSettings.getSetting(CLIENT), 
 		"EMULATE", 
-		currentSettings.getPath(PLAYERINPUT1), 
-		currentSettings.getPath(PLAYERINPUT2), 
+		CurrentSettings.getSetting(PLAYERINPUT1), 
+		CurrentSettings.getSetting(PLAYERINPUT2), 
 		bp::std_out > pipe_stream
 	);
 
@@ -85,3 +98,14 @@ int Benchmark::emulateRun(Settings currentSettings)
 
 	return 0;
 }//simulatedRun
+
+int Benchmark::simulateRun(Settings currentSettings)
+{
+	device *tuntap = &(*tuntap_init());
+	tuntap_start(tuntap, TUNTAP_MODE_TUNNEL, TUNTAP_ID_ANY);
+	tuntap_up(tuntap);
+	std::string ifname = tuntap_get_ifname(tuntap);
+	std::string syscall = "tc -s qdisc show dev " + ifname;
+	bp::system(syscall.c_str());
+	return 0;
+}

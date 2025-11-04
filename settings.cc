@@ -17,28 +17,36 @@ Settings::Settings()
 
 	//if it doesnt exist, make a new one
 	if (!settingsFile.is_open())
-	{
+	{		
+		//set current settings to a null value
+		settingsList[CLIENT] = "None";
+		settingsList[SERVER] = "None";
+		settingsList[PLAYERINPUT1] = "None";
+		settingsList[PLAYERINPUT2] = "None";
+		settingsList[SKIPEMULATION] = "n";
+		settingsList[SKIPSIMULATION] = "n";
+		settingsList[SAVEEMULATION] = "n";
+
+		//load them into the file
 		std::ofstream newSettings("settings");
 
 		for (int i = 0; i < settingsCount; i++)
 		{
-			newSettings << "None\n";
+			newSettings << settingsList[i] << std::endl;
 		}//for
 		newSettings.close();
 
-		//set current paths to NULL
-		clientPath = "None";
-		serverPath = "None";
-		playerInput1Path = "None";
-		playerInput2Path = "None";
 		return;
-	}
+	}//if
 
-	//if it does exist, load in the paths
-	clientPath = loadPath(CLIENT);
-	serverPath = loadPath(SERVER);
-	playerInput1Path = loadPath(PLAYERINPUT1);
-	playerInput2Path = loadPath(PLAYERINPUT2);
+	//if it does exist, load in the settingss
+	settingsList[CLIENT] = loadSetting(CLIENT);
+	settingsList[SERVER] = loadSetting(SERVER);
+	settingsList[PLAYERINPUT1] = loadSetting(PLAYERINPUT1);
+	settingsList[PLAYERINPUT2] = loadSetting(PLAYERINPUT2);
+	settingsList[SKIPEMULATION] = loadSetting(SKIPEMULATION);
+	settingsList[SKIPSIMULATION] = loadSetting(SKIPSIMULATION);
+	settingsList[SAVEEMULATION] = loadSetting(SAVEEMULATION);
 	return;
 }//constructor
 
@@ -75,50 +83,39 @@ int Settings::setPath(enum Target file)
 	}//while
 
 	//write to correct target
-	switch(file)
-	{
-		case CLIENT:
-			clientPath = path;
-			savePath(file, path);
-			break;
-		case SERVER:
-			serverPath = path;
-			savePath(file, path);
-			break;
-		case PLAYERINPUT1:
-			playerInput1Path = path;
-			savePath(file, path);
-			break;
-		case PLAYERINPUT2:
-			playerInput2Path = path;
-			savePath(file, path);
-			break;
-	}//switch
+	settingsList[file] = path;
+	saveSetting(file, path);
+
 	return 0;
 }//setPath
 
-std::string Settings::getPath(enum Target file)
+int Settings::setBool(enum Target option)
 {
-	//return correct path
-	switch(file)
-	{
-		case CLIENT:
-			return clientPath;
-			break;
-		case SERVER:
-			return serverPath;
-			break;
-		case PLAYERINPUT1:
-			return playerInput1Path;
-			break;
-		case PLAYERINPUT2:
-			return playerInput2Path;
-			break;
-	}//switch
-	return NULL;
-}//getPath
+	std::cout << "[y/n]: ";
+	std::string setting;
+	std::cin >> setting;
 
-int Settings::savePath(enum Target file, std::string path)
+	while(setting != "y" && setting != "n")
+	{
+		std::cout << "invalid choice, please try again" << std::endl;
+		std::cout << "[y/n]: ";
+		std::cin >> setting;
+	}//while
+	
+	//write to correct target
+	settingsList[option] = setting;
+	saveSetting(option, setting);
+
+	return 0;
+}//setBool
+
+std::string Settings::getSetting(enum Target option)
+{
+	//return correct settings
+	return settingsList[option];
+}//getSetting
+
+int Settings::saveSetting(enum Target option, std::string setting)
 {
 	//open settings file
 	std::ifstream readFile;
@@ -137,8 +134,8 @@ int Settings::savePath(enum Target file, std::string path)
 	}//for
 	readFile.close();
 
-	//save correct path
-	editSettings[file] = path;
+	//save correct setting
+	editSettings[option] = setting;
 
 	//overwrite old settings file
 	std::ofstream writeFile;
@@ -149,9 +146,9 @@ int Settings::savePath(enum Target file, std::string path)
 	}//for
 	writeFile.close();
 	return 0;
-}//savePath
+}//saveSetting
 
-std::string Settings::loadPath(enum Target file)
+std::string Settings::loadSetting(enum Target option)
 {
 	//open settings file
 	std::ifstream settingsFile;
@@ -170,6 +167,6 @@ std::string Settings::loadPath(enum Target file)
 	}//for
 	settingsFile.close();
 
-	//return target path
-	return loadSettings[file];
-}//loadPath
+	//return target option
+	return loadSettings[option];
+}//loadSettings

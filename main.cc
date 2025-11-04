@@ -8,21 +8,61 @@
 #include "settings.h"
 #include "benchmark.h"
 
-//Options menu for the benchmark.
-void menu(Settings &CurrentSettings)
+//a list of additional options
+void subMenu(Settings &CurrentSettings)
 {
-	//Basic menu loop
-	bool runProgram = true;
-	while (runProgram)
+	bool runSubMenu = true;
+	while(runSubMenu)
 	{
 		std::cout << std::endl;
 		std::cout << "| ButtonCheck: Netcode benchmark for competitive multiplayer games" << std::endl
 		<< "| Made by Michiel van der Bijl" << std::endl
 		<< "|" << std::endl
-		<< "| Path to game client:	" << CurrentSettings.getPath(CLIENT) << std::endl
-		<< "| Path to game server:	" << CurrentSettings.getPath(SERVER) << std::endl
-		<< "| Path to player 1 input: " << CurrentSettings.getPath(PLAYERINPUT1) << std::endl
-		<< "| Path to player 2 input: " << CurrentSettings.getPath(PLAYERINPUT2) << std::endl
+		<< "| Skip emulation step?	(y/n)	" << CurrentSettings.getSetting(SKIPEMULATION) << std::endl
+		<< "| Skip simulation step?	(y/n)	" << CurrentSettings.getSetting(SKIPSIMULATION) << std::endl
+		<< "| Save emulation file?	(y/n)	" << CurrentSettings.getSetting(SAVEEMULATION) << std::endl
+		<< "__________________________________________________________________" << std::endl
+		<< "1: set skip emulation step" << std::endl
+		<< "2: set skip simulation step" << std::endl
+		<< "3: set save emulation" << std::endl
+		<< "4: return to main menu" << std::endl;
+		std::cout << "Choose option: ";
+		std::string input;
+		std::cin >> input;
+		if(input == "1")
+		{
+			std::cout << std::endl;
+			CurrentSettings.setBool(SKIPEMULATION);
+		}else if(input == "2")
+		{
+			std::cout << std::endl;
+			CurrentSettings.setBool(SKIPSIMULATION);
+		}else if(input == "3")
+		{
+			std::cout << std::endl;
+			CurrentSettings.setBool(SAVEEMULATION);
+		}else if(input == "4")
+		{
+			runSubMenu = false;
+		}//else if
+	}//while	
+}//subMenu
+
+//Options menu for the benchmark.
+void menu(Settings &CurrentSettings)
+{
+	//Basic menu loop
+	bool runProgram = true;
+	while(runProgram)
+	{
+		std::cout << std::endl;
+		std::cout << "| ButtonCheck: Netcode benchmark for competitive multiplayer games" << std::endl
+		<< "| Made by Michiel van der Bijl" << std::endl
+		<< "|" << std::endl
+		<< "| Path to game client:		" << CurrentSettings.getSetting(CLIENT) << std::endl
+		<< "| Path to game server:		" << CurrentSettings.getSetting(SERVER) << std::endl
+		<< "| Path to player 1 input:	" << CurrentSettings.getSetting(PLAYERINPUT1) << std::endl
+		<< "| Path to player 2 input:	" << CurrentSettings.getSetting(PLAYERINPUT2) << std::endl
 		<< "__________________________________________________________________" << std::endl
 		<< "1: set game client" << std::endl
 		<< "2: set game server" << std::endl
@@ -34,32 +74,32 @@ void menu(Settings &CurrentSettings)
 		std::cout << "Choose option: ";
 		std::string input;
 		std::cin >> input;
-		if (input == "1")
+		if(input == "1")
 		{
 			std::cout << std::endl;
 			CurrentSettings.setPath(CLIENT);
-		}else if (input == "2")
+		}else if(input == "2")
 		{
 			std::cout << std::endl;
 			CurrentSettings.setPath(SERVER);
-		}else if (input == "3")
+		}else if(input == "3")
 		{
 			std::cout << std::endl;
 			CurrentSettings.setPath(PLAYERINPUT1);
-		}else if (input == "4")
+		}else if(input == "4")
 		{
 			std::cout << std::endl;
 			CurrentSettings.setPath(PLAYERINPUT2);
-		}else if (input == "5")
+		}else if(input == "5")
 		{
 			std::cout << std::endl;
-			//subMenu
-		}else if (input == "6")
+			subMenu(CurrentSettings);
+		}else if(input == "6")
 		{
 			std::cout << std::endl;
-			Benchmark benchy;
+			Benchmark benchy(CurrentSettings);
 			benchy.startBenchmark(CurrentSettings);
-		}else if (input == "7")
+		}else if(input == "7")
 		{
 			runProgram = false;
 		}//else if
