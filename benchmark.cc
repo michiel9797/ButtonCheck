@@ -9,14 +9,13 @@
 #include <filesystem>
 #include <boost/process.hpp>
 #include "benchmark.h"
-#include "libtuntap/tuntap.h"
 
 namespace bp = boost::process;
 
-Benchmark::Benchmark(Settings CurrentSettings)
+Benchmark::Benchmark(Settings &CurrentSettings)
 {
-
 	saveEmulation = CurrentSettings.getSetting(SAVEEMULATION);
+	saveSimulation = CurrentSettings.getSetting(SAVESIMULATION);
 }//Benchmark
 
 Benchmark::~Benchmark()
@@ -25,10 +24,22 @@ Benchmark::~Benchmark()
 	{
 		std::remove("emulatedRun");
 	}//if
+	if(saveSimulation == "n")
+	{
+		std::remove("simulatedRun");
+	}//if
 }//~Benchmark
 
-int Benchmark::startBenchmark(Settings CurrentSettings)
+int Benchmark::startBenchmark(Settings &CurrentSettings)
 {
+	if(CurrentSettings.getSetting(CLIENT) == "None" ||
+	   CurrentSettings.getSetting(SERVER) == "None" ||
+	   CurrentSettings.getSetting(PLAYERINPUT1) == "None" ||
+	   CurrentSettings.getSetting(PLAYERINPUT2) == "None")
+	{
+		std::cout << "Set all paths before running the benchmark" << std::endl;
+		return -1;
+	}//if
 	if(CurrentSettings.getSetting(SKIPEMULATION) != "y")
 		emulateRun(CurrentSettings);
 	if(CurrentSettings.getSetting(SKIPSIMULATION) != "y")
@@ -36,13 +47,13 @@ int Benchmark::startBenchmark(Settings CurrentSettings)
 	return 0;
 }//startBenchmark
 
-int Benchmark::emulateRun(Settings CurrentSettings)
+int Benchmark::emulateRun(Settings &CurrentSettings)
 {
 	//to read the game state data and other communications from
 	bp::ipstream pipe_stream;
 
 	//run the client
-	bp::child s(
+	bp::child client(
 		CurrentSettings.getSetting(CLIENT), 
 		"EMULATE", 
 		CurrentSettings.getSetting(PLAYERINPUT1), 
@@ -70,7 +81,7 @@ int Benchmark::emulateRun(Settings CurrentSettings)
 				connected = true;
 				std::cout << "Running emulation" << std::endl;
 			} else { //if it fails, terminate it
-				s.terminate();
+				client.terminate();
 				std::cerr << "Client did not identify correctly\n";
 				return -1;
 			}//else
@@ -92,20 +103,118 @@ int Benchmark::emulateRun(Settings CurrentSettings)
 		}//if
 	}//while
 
-	s.wait();
+	client.wait();
 
 	std::cout << std::endl;
 
 	return 0;
 }//simulatedRun
 
-int Benchmark::simulateRun(Settings currentSettings)
+int Benchmark::setDevices(Settings &CurrentSettings)
 {
-	device *tuntap = &(*tuntap_init());
-	tuntap_start(tuntap, TUNTAP_MODE_TUNNEL, TUNTAP_ID_ANY);
-	tuntap_up(tuntap);
-	std::string ifname = tuntap_get_ifname(tuntap);
-	std::string syscall = "tc -s qdisc show dev " + ifname;
-	bp::system(syscall.c_str());
-	return 0;
+    // Locate the ip command
+    std::string ip_path = bp::search_path("ip").string();
+    if (ip_path.empty()) {
+        std::cerr << "Error: could not find the 'ip' command in PATH.\n";
+        return -1;
+    }
+
+    //clean old connection setups if they exist
+    bp::system(ip_path, "netns", "del", "nsClient1");
+    bp::system(ip_path, "netns", "del", "nsClient2");
+    bp::system(ip_path, "netns", "del", "nsServer");
+
+    //create namespaces
+    if (bp::system(ip_path, "netns", "add", "nsClient1") != 0) return -1;
+    if (bp::system(ip_path, "netns", "add", "nsServer")  != 0) return -1;
+    if (bp::system(ip_path, "netns", "add", "nsClient2") != 0) return -1;
+
+    //create veth pairs
+    if (bp::system(ip_path, "link", "add", "veth1", "type", "veth", "peer", "name", "vethS1") != 0) return -1;
+    if (bp::system(ip_path, "link", "add", "veth2", "type", "veth", "peer", "name", "vethS2") != 0) return -1;
+
+    //move to namespaces
+    if (bp::system(ip_path, "link", "set", "veth1",  "netns", "nsClient1") != 0) return -1;
+    if (bp::system(ip_path, "link", "set", "vethS1", "netns", "nsServer")  != 0) return -1;
+
+    if (bp::system(ip_path, "link", "set", "veth2",  "netns", "nsClient2") != 0) return -1;
+    if (bp::system(ip_path, "link", "set", "vethS2", "netns", "nsServer")  != 0) return -1;
+
+    //set IP addresses
+    if (bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.1.2/24", "dev", "veth1") != 0) return -1;
+    if (bp::system(ip_path, "netns", "exec", "nsServer",  "ip", "addr", "add", "10.0.1.1/24", "dev", "vethS1") != 0) return -1;
+
+    if (bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.2.2/24", "dev", "veth2") != 0) return -1;
+    if (bp::system(ip_path, "netns", "exec", "nsServer",  "ip", "addr", "add", "10.0.2.1/24", "dev", "vethS2") != 0) return -1;
+
+    //bring links up
+    bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "link", "set", "veth1", "up");
+    bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "link", "set", "lo", "up");
+
+    bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up");
+    bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up");
+    bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "lo", "up");
+
+    bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "link", "set", "veth2", "up");
+    bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "link", "set", "lo", "up");
+
+    //enable routing for server
+    bp::system(ip_path, "netns", "exec", "nsServer", "sysctl", "-w", "net.ipv4.ip_forward=1");
+
+    return 0;
 }
+
+int Benchmark::simulateRun(Settings &CurrentSettings)
+{
+
+	if(setDevices(CurrentSettings) == -1)
+	{
+		std::cout << "Network setup failed" << std::endl;
+		return -1;
+	}//if
+
+	//to read the server state from
+	bp::ipstream server_stream;
+
+	//convert relative path to absolute path
+	std::string exe = std::filesystem::absolute(CurrentSettings.getSetting(SERVER));
+
+	/*//run the server
+	bp::child server(
+		"ip",
+		"netns",
+		"exec",
+		"nsServer",
+		exe, 
+		"SERVER", 
+		"10.0.1.1:40000",					//the IP and port the server must use
+		"--bind",
+		"10.0.1.1",
+		bp::std_out > server_stream
+	);
+
+	std::cout << "Yep" << std::endl;
+
+	std::string received;
+
+	std::getline(server_stream, received);
+	//check for the correct identification
+	if (received == "SERVER START")
+	{
+		std::cout << "Server started" << std::endl;
+	} else { //if it fails, terminate it
+		server.terminate();
+		std::cerr << "Server did not identify correctly\n";
+		return -1;
+	}//else
+
+	std::string syscall = "ip route add ";
+	bp::system(syscall.c_str());
+
+	syscall = "ip addr show";
+	bp::system(syscall.c_str());
+
+	syscall = "route -4";
+	bp::system(syscall.c_str());*/
+	return 0;
+}//simulateRun

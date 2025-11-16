@@ -21,11 +21,13 @@ void subMenu(Settings &CurrentSettings)
 		<< "| Skip emulation step?	(y/n)	" << CurrentSettings.getSetting(SKIPEMULATION) << std::endl
 		<< "| Skip simulation step?	(y/n)	" << CurrentSettings.getSetting(SKIPSIMULATION) << std::endl
 		<< "| Save emulation file?	(y/n)	" << CurrentSettings.getSetting(SAVEEMULATION) << std::endl
+		<< "| Save simulation file? (y/n)	" << CurrentSettings.getSetting(SAVESIMULATION) << std::endl
 		<< "__________________________________________________________________" << std::endl
 		<< "1: set skip emulation step" << std::endl
 		<< "2: set skip simulation step" << std::endl
 		<< "3: set save emulation" << std::endl
-		<< "4: return to main menu" << std::endl;
+		<< "4: set save simulation" << std::endl
+		<< "5: return to main menu" << std::endl;
 		std::cout << "Choose option: ";
 		std::string input;
 		std::cin >> input;
@@ -42,6 +44,10 @@ void subMenu(Settings &CurrentSettings)
 			std::cout << std::endl;
 			CurrentSettings.setBool(SAVEEMULATION);
 		}else if(input == "4")
+		{
+			std::cout << std::endl;
+			CurrentSettings.setBool(SAVESIMULATION);
+		}else if (input == "5")
 		{
 			runSubMenu = false;
 		}//else if

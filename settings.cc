@@ -26,6 +26,7 @@ Settings::Settings()
 		settingsList[SKIPEMULATION] = "n";
 		settingsList[SKIPSIMULATION] = "n";
 		settingsList[SAVEEMULATION] = "n";
+		settingsList[SAVESIMULATION] = "n";
 
 		//load them into the file
 		std::ofstream newSettings("settings");
@@ -47,6 +48,7 @@ Settings::Settings()
 	settingsList[SKIPEMULATION] = loadSetting(SKIPEMULATION);
 	settingsList[SKIPSIMULATION] = loadSetting(SKIPSIMULATION);
 	settingsList[SAVEEMULATION] = loadSetting(SAVEEMULATION);
+	settingsList[SAVESIMULATION] = loadSetting(SAVESIMULATION);
 	return;
 }//constructor
 

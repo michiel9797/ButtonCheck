@@ -15,7 +15,8 @@ enum Target
 	PLAYERINPUT2,
 	SKIPEMULATION,
 	SKIPSIMULATION,
-	SAVEEMULATION
+	SAVEEMULATION,
+	SAVESIMULATION
 };//target
 
 class Settings 
@@ -37,7 +38,7 @@ class Settings
 		//load paths to target from the settings file, returns -1 on failure
 		std::string loadSetting(enum Target option);
 		//amount of settings, equals lines in the settings file
-		const static int settingsCount = 7;
+		const static int settingsCount = 8;
 		//array containing all settings
 		//0: path to client
 		//1: path to server
@@ -46,6 +47,7 @@ class Settings
 		//4: should the emulation step be skipped
 		//5: should the simulation step be skipped
 		//6: should the emulation run file be saved
+		//7: should the simulation run file be saved
 		std::string settingsList[settingsCount];
 };//settings
 
