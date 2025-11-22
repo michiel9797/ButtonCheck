@@ -110,15 +110,8 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 	return 0;
 }//simulatedRun
 
-int Benchmark::setDevices(Settings &CurrentSettings)
+int Benchmark::setDevices(Settings &CurrentSettings, std::string ip_path)
 {
-    // Locate the ip command
-    std::string ip_path = bp::search_path("ip").string();
-    if (ip_path.empty()) {
-        std::cerr << "Error: could not find the 'ip' command in PATH.\n";
-        return -1;
-    }
-
     //clean old connection setups if they exist
     bp::system(ip_path, "netns", "del", "nsClient1");
     bp::system(ip_path, "netns", "del", "nsClient2");
@@ -162,12 +155,18 @@ int Benchmark::setDevices(Settings &CurrentSettings)
     bp::system(ip_path, "netns", "exec", "nsServer", "sysctl", "-w", "net.ipv4.ip_forward=1");
 
     return 0;
-}
+}//setDevices
 
 int Benchmark::simulateRun(Settings &CurrentSettings)
 {
+    // Locate the ip command
+    std::string ip_path = bp::search_path("ip").string();
+    if (ip_path.empty()) {
+        std::cerr << "Error: could not find the 'ip' command in PATH.\n";
+        return -1;
+    }
 
-	if(setDevices(CurrentSettings) == -1)
+	if(setDevices(CurrentSettings, ip_path) == -1)
 	{
 		std::cout << "Network setup failed" << std::endl;
 		return -1;
@@ -176,28 +175,27 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 	//to read the server state from
 	bp::ipstream server_stream;
 
+	//to read the client state from
+	bp::ipstream client_stream;
+
 	//convert relative path to absolute path
 	std::string exe = std::filesystem::absolute(CurrentSettings.getSetting(SERVER));
 
-	/*//run the server
+	//run the server
 	bp::child server(
-		"ip",
+		ip_path,
 		"netns",
 		"exec",
 		"nsServer",
 		exe, 
 		"SERVER", 
 		"10.0.1.1:40000",					//the IP and port the server must use
-		"--bind",
-		"10.0.1.1",
 		bp::std_out > server_stream
 	);
 
-	std::cout << "Yep" << std::endl;
-
 	std::string received;
-
 	std::getline(server_stream, received);
+
 	//check for the correct identification
 	if (received == "SERVER START")
 	{
@@ -208,13 +206,43 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		return -1;
 	}//else
 
-	std::string syscall = "ip route add ";
-	bp::system(syscall.c_str());
+	//convert relative path to absolute path
+	std::string input = std::filesystem::absolute(CurrentSettings.getSetting(PLAYERINPUT1));
 
-	syscall = "ip addr show";
-	bp::system(syscall.c_str());
+	//run client 1
+	bp::child client1(
+		ip_path,
+		"netns",
+		"exec",
+		"nsClient1",
+		exe, 
+		"SIMULATE", 
+		input,
+		"1",
+		"10.0.1.2",
+		"10.0.1.1:40000",					//the IP and port the server must use
+		bp::std_out > client_stream
+	);
 
-	syscall = "route -4";
-	bp::system(syscall.c_str());*/
+	//convert relative path to absolute path
+	input = std::filesystem::absolute(CurrentSettings.getSetting(PLAYERINPUT2));
+
+	//run client 2
+	bp::child client2(
+		ip_path,
+		"netns",
+		"exec",
+		"nsClient2",
+		exe, 
+		"SIMULATE", 
+		input,
+		"2",
+		"10.0.2.2",
+		"10.0.1.1:40000"//,					//the IP and port the server must use
+		//bp::std_out > client_stream
+	);
+
+	sleep(10);
+
 	return 0;
 }//simulateRun
