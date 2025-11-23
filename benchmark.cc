@@ -133,26 +133,29 @@ int Benchmark::setDevices(Settings &CurrentSettings, std::string ip_path)
     if (bp::system(ip_path, "link", "set", "veth2",  "netns", "nsClient2") != 0) return -1;
     if (bp::system(ip_path, "link", "set", "vethS2", "netns", "nsServer")  != 0) return -1;
 
-    //set IP addresses
-    if (bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.1.2/24", "dev", "veth1") != 0) return -1;
-    if (bp::system(ip_path, "netns", "exec", "nsServer",  "ip", "addr", "add", "10.0.1.1/24", "dev", "vethS1") != 0) return -1;
+	//create bridge
+	if (bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "add", "name", "br0", "type", "bridge") != 0) return -1;
 
-    if (bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.2.2/24", "dev", "veth2") != 0) return -1;
-    if (bp::system(ip_path, "netns", "exec", "nsServer",  "ip", "addr", "add", "10.0.2.1/24", "dev", "vethS2") != 0) return -1;
+	// Add both server veth interfaces to the bridge
+	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "master", "br0");
+	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "master", "br0");
+
+    //set IP addresses
+	if (bp::system(ip_path, "netns", "exec", "nsServer", "ip", "addr", "add", "10.0.0.1/24", "dev", "br0") != 0) return -1;
+    if (bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.0.2/24", "dev", "veth1") != 0) return -1;
+    if (bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.0.3/24", "dev", "veth2") != 0) return -1;
 
     //bring links up
+	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "br0", "up");
+	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up");
+	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up");
+	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "lo", "up");
+
     bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "link", "set", "veth1", "up");
     bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "link", "set", "lo", "up");
 
-    bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up");
-    bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up");
-    bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "lo", "up");
-
     bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "link", "set", "veth2", "up");
     bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "link", "set", "lo", "up");
-
-    //enable routing for server
-    bp::system(ip_path, "netns", "exec", "nsServer", "sysctl", "-w", "net.ipv4.ip_forward=1");
 
     return 0;
 }//setDevices
@@ -177,6 +180,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 
 	//to read the client state from
 	bp::ipstream client_stream;
+	bp::ipstream client_stream2;
 
 	//convert relative path to absolute path
 	std::string exe = std::filesystem::absolute(CurrentSettings.getSetting(SERVER));
@@ -189,7 +193,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		"nsServer",
 		exe, 
 		"SERVER", 
-		"10.0.1.1:40000",					//the IP and port the server must use
+		"10.0.0.1:40000",					//the IP and port the server must use
 		bp::std_out > server_stream
 	);
 
@@ -219,8 +223,8 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		"SIMULATE", 
 		input,
 		"1",
-		"10.0.1.2",
-		"10.0.1.1:40000",					//the IP and port the server must use
+		"10.0.0.2",
+		"10.0.0.1:40000",					//the IP and port the server must use
 		bp::std_out > client_stream
 	);
 
@@ -237,9 +241,9 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		"SIMULATE", 
 		input,
 		"2",
-		"10.0.2.2",
-		"10.0.1.1:40000"//,					//the IP and port the server must use
-		//bp::std_out > client_stream
+		"10.0.0.3",
+		"10.0.0.1:40000"//,					//the IP and port the server must use
+		//bp::std_out > client_stream2
 	);
 
 	sleep(10);
