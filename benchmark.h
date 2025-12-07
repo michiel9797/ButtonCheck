@@ -25,8 +25,10 @@ class Benchmark
 		int emulateRun(Settings &CurrentSettings);
 		//execute a simulated run with network simulation
 		int simulateRun(Settings &CurrentSettings);
+		//compare both runs
+		float compareRuns();
 		//set up the server and client veth pairs
-		int setDevices(Settings &CurrentSettings, std::string ip_path);
+		int setDevices(std::string ip_path);
 		//should the emulation run be removed after a benchmark
 		std::string saveEmulation;
 		//should the simulation run be removed after a benchmark
