@@ -8,7 +8,7 @@ The following libraries are required to compile and run this program:
 - (net-tools)[https://sourceforge.net/projects/net-tools/#]
 - (libboost-all-dev)[https://www.boost.org]
 
-##Custom game support
+## Custom game support
 ButtonCheck can support different games then the one provided, though there are a set of restrictions and requirements.
 
 Firstly ButtonCheck can only run in Linux, as it makes use of Linux network simulation tools.
@@ -16,7 +16,7 @@ Firstly ButtonCheck can only run in Linux, as it makes use of Linux network simu
 Secondly, ButtonCheck expects any underlaying programs to meet the following structural requirements:
 - The program used to run an emulation and client instances for simulations must be the exact same, servers can be run from either the same or a different program.
 
-###Emulation
+### Emulation
 - Emulation programs will be provided the following commandline inputs:
   1. Executable name, as defined in ButtonChecks menu
   2. EMULATE (to signify it must run in emulation mode)
@@ -30,7 +30,7 @@ EMULATE START
 - For the timer displayed by ButtonCheck during emulation, 60fps is expected. Other framerates will still work, but this timer may be unreliable in such cases.
 - Emulation programs must end by themselves.
 
-###Simulation
+### Simulation
 - Simulation programs will be provided the following commandline inputs:
   1. Executable name, as defined in ButtonChecks menu
   2. SIMULATE (to signify it must run in simulation mode)
@@ -42,7 +42,7 @@ EMULATE START
 - For the timer displayed by ButtonCheck during simulation, 60fps is expected. Other framerates will still work, but this timer may be unreliable in such cases.
 - Simulation programs must end by themselves.
 
-###Server
+### Server
 - Server programs will be provided the following commandline inputs:
   1. Executable name, as defined in ButtonChecks menu
   2. SERVER (to singify it must run in server mode)
