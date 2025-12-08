@@ -13,9 +13,10 @@
 namespace bp = boost::process;
 
 Benchmark::Benchmark(Settings &CurrentSettings)
+	:	saveEmulation(CurrentSettings.getSetting(SAVEEMULATION)),
+		saveSimulation(CurrentSettings.getSetting(SAVESIMULATION))
 {
-	saveEmulation = CurrentSettings.getSetting(SAVEEMULATION);
-	saveSimulation = CurrentSettings.getSetting(SAVESIMULATION);
+	//no further initialization needed
 }//Benchmark
 
 Benchmark::~Benchmark()

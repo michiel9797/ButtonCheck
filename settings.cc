@@ -60,7 +60,7 @@ int Settings::setPath(enum Target file)
 	std::cin >> path;
 
 	//switch / with \ for the exists function
-	for(int i = 0; i < path.length(); i++)
+	for(unsigned long i = 0; i < path.length(); i++)
 	{
 		if(path[i] == '\\')
 		{
@@ -75,7 +75,7 @@ int Settings::setPath(enum Target file)
 		std::cin >> path;
 
 		//switch / with \ for the open function
-		for(int i = 0; i < path.length(); i++)
+		for(unsigned long i = 0; i < path.length(); i++)
 		{
 			if(path[i] == '\\')
 			{
