@@ -2,11 +2,11 @@
 A benchmark for testing Netcodes, primarily focussed on information accuracy for competitive multiplayer games.
 
 A simple generic 2D fighting game made for the purposes of this benchmark can be found here:
-- (Benchy-Fighters)[https://github.com/michiel9797/Benchy-Fighters]
+- [Benchy-Fighters](https://github.com/michiel9797/Benchy-Fighters)
 
 The following libraries are required to compile and run this program:
-- (net-tools)[https://sourceforge.net/projects/net-tools/#]
-- (libboost-all-dev)[https://www.boost.org]
+- [net-tools](https://sourceforge.net/projects/net-tools/#)
+- [libboost-all-dev](https://www.boost.org)
 
 ## Custom game support
 ButtonCheck can support different games then the one provided, though there are a set of restrictions and requirements.
