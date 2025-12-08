@@ -47,4 +47,8 @@ EMULATE START
   1. Executable name, as defined in ButtonChecks menu
   2. SERVER (to singify it must run in server mode)
   3. The IP and port the server must use, 10.0.0.1:40000
+- Server programs must start by providing a handshake to the standard commandline:
+```bash
+SERVER START
+```
 - Server programs must end by themselves.
