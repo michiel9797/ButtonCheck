@@ -158,7 +158,7 @@ std::string Settings::loadSetting(enum Target option)
 	if (!settingsFile.is_open())
 	{
 		std::cerr << "couldn't find settings file" << std::endl;
-		return NULL;
+		return "";
 	}//if
 
 	//read settings into an array

@@ -35,7 +35,7 @@ class Settings
 	private:
 		//save path to target to the settings file, returns -1 on failure
 		int saveSetting(enum Target option, std::string path);
-		//load paths to target from the settings file, returns -1 on failure
+		//load paths to target from the settings file, returns "" on failure
 		std::string loadSetting(enum Target option);
 		//amount of settings, equals lines in the settings file
 		const static int settingsCount = 8;

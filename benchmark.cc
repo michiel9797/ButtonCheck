@@ -8,13 +8,16 @@
 #include <iostream>
 #include <filesystem>
 #include <boost/process.hpp>
+#include <sys/wait.h>
 #include "benchmark.h"
 
 namespace bp = boost::process;
 
 Benchmark::Benchmark(Settings &CurrentSettings)
 	:	saveEmulation(CurrentSettings.getSetting(SAVEEMULATION)),
-		saveSimulation(CurrentSettings.getSetting(SAVESIMULATION))
+		saveSimulation(CurrentSettings.getSetting(SAVESIMULATION)),
+		emulationTime(-1),
+		simulationTime(-1)
 {
 	//no further initialization needed
 }//Benchmark
@@ -75,10 +78,28 @@ int Benchmark::startBenchmark(Settings &CurrentSettings)
 	}//else
 
 	if(compare)
+	{
 		std::cout << "Accuracy: " << compareRuns()  << "%" << std::endl;
+		if((emulationTime != -1) && (simulationTime != -1))
+		{
+			std::cout << "Difference in execution time: " 
+					  << simulationTime - emulationTime << "s" << std::endl;
+		}//if	
+	}//if
 
 	return 0;
 }//startBenchmark
+
+double Benchmark::getCPUTime(rusage usage)
+{
+	double userTime = usage.ru_utime.tv_sec +
+                      usage.ru_utime.tv_usec / 1e6;
+
+    double systemTime = usage.ru_stime.tv_sec +
+                        usage.ru_stime.tv_usec / 1e6;
+
+	return userTime + systemTime;
+}//getCPUTime
 
 int Benchmark::emulateRun(Settings &CurrentSettings)
 {
@@ -143,7 +164,10 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 		}//else
 	}//while
 
-	client.wait();
+	struct rusage usage;
+	wait4(client.id(), 0, 0, &usage);
+
+	emulationTime = getCPUTime(usage);
 
 	std::cout << std::endl << "Emulation finished" << std::endl;
 
@@ -334,8 +358,13 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 	}//while
 
 	server.wait();
-	client1.wait();
+
+	struct rusage usage;
+	wait4(client1.id(), 0, 0, &usage);
+
 	client2.wait();
+
+	simulationTime = getCPUTime(usage);
 
 	std::cout << std::endl << "Simulation finished" << std::endl;
 

@@ -8,6 +8,7 @@
 #define BenchmarkH
 
 #include "settings.h"
+#include <sys/resource.h>
 
 class Benchmark
 {
@@ -25,14 +26,20 @@ class Benchmark
 		int emulateRun(Settings &CurrentSettings);
 		//execute a simulated run with network simulation
 		int simulateRun(Settings &CurrentSettings);
-		//compare both runs
+		//compare both runs, return the accuracy
 		float compareRuns();
 		//set up the server and client veth pairs
 		int setDevices(std::string ip_path);
+		//get the total CPU time from rusage
+		double getCPUTime(rusage usage);
 		//should the emulation run be removed after a benchmark
 		std::string saveEmulation;
 		//should the simulation run be removed after a benchmark
 		std::string saveSimulation;
+		//total cpu time the emulation run spanned
+		double emulationTime;
+		//total cpu time the simulation run spanned
+		double simulationTime;
 
 };//benchmark
 
