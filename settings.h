@@ -13,10 +13,13 @@ enum Target
 	SERVER,
 	PLAYERINPUT1,
 	PLAYERINPUT2,
+	NETEM,
 	SKIPEMULATION,
 	SKIPSIMULATION,
 	SAVEEMULATION,
-	SAVESIMULATION
+	SAVESIMULATION,
+	APPLYNETEM,
+	FPS
 };//target
 
 class Settings 
@@ -29,6 +32,8 @@ class Settings
 		int setPath(enum Target file);
 		//set a bool
 		int setBool(enum Target option);
+		//set a uint
+		int setUInt(enum Target number);
 		//return path to target
 		std::string getSetting(enum Target option);
 
@@ -38,16 +43,19 @@ class Settings
 		//load paths to target from the settings file, returns "" on failure
 		std::string loadSetting(enum Target option);
 		//amount of settings, equals lines in the settings file
-		const static int settingsCount = 8;
+		const static int settingsCount = 11;
 		//array containing all settings
-		//0: path to client
-		//1: path to server
-		//2: path to input for player 1
-		//3: path to input for player 2
-		//4: should the emulation step be skipped
-		//5: should the simulation step be skipped
-		//6: should the emulation run file be saved
-		//7: should the simulation run file be saved
+		//0:  path to client
+		//1:  path to server
+		//2:  path to input for player 1
+		//3:  path to input for player 2
+		//4:  path to netem file
+		//5:  should the emulation step be skipped
+		//6:  should the simulation step be skipped
+		//7:  should the emulation run file be saved
+		//8:  should the simulation run file be saved
+		//9:  should network emulation be applied
+		//10: fps the client program runs at
 		std::string settingsList[settingsCount];
 };//settings
 

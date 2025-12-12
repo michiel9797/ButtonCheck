@@ -7,8 +7,11 @@
 #ifndef BenchmarkH
 #define BenchmarkH
 
-#include "settings.h"
 #include <sys/resource.h>
+#include "settings.h"
+#include "nlohmann-json/json.hpp"
+
+using json = nlohmann::json;
 
 class Benchmark
 {
@@ -21,6 +24,9 @@ class Benchmark
 		int startBenchmark(Settings &CurrentSettings);
 
 	private:
+		//check if all the required settings are set for the
+		//attempted run (may still fail later if values are bad)
+		int checkSettings(Settings &CurrentSettings);
 		//execute an emulated perfect run to gather correct
 		//reference data and the cpu usage baseline
 		int emulateRun(Settings &CurrentSettings);
@@ -30,6 +36,13 @@ class Benchmark
 		float compareRuns();
 		//set up the server and client veth pairs
 		int setDevices(std::string ip_path);
+		//helper for calling tc netem
+		void invokeNetem(std::string ip_path, std::string mode1, 
+						 std::string delay, std::string loss);
+		//set which frame the next network simulation needs to be called
+		int setNextNetemFrame(int netemCount);
+		//set the state of the network emulation
+		void setNetem(std::string ip_path, int &netemCount, int &nextNetemFrame);
 		//get the total CPU time from rusage
 		double getCPUTime(rusage usage);
 		//should the emulation run be removed after a benchmark
@@ -40,6 +53,8 @@ class Benchmark
 		double emulationTime;
 		//total cpu time the simulation run spanned
 		double simulationTime;
+		//the json object with the network emulation data
+		json netemData;
 
 };//benchmark
 

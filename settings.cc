@@ -23,10 +23,13 @@ Settings::Settings()
 		settingsList[SERVER] = "None";
 		settingsList[PLAYERINPUT1] = "None";
 		settingsList[PLAYERINPUT2] = "None";
+		settingsList[NETEM] = "None";
 		settingsList[SKIPEMULATION] = "n";
 		settingsList[SKIPSIMULATION] = "n";
 		settingsList[SAVEEMULATION] = "n";
 		settingsList[SAVESIMULATION] = "n";
+		settingsList[APPLYNETEM] = "y";
+		settingsList[FPS] =  "60";
 
 		//load them into the file
 		std::ofstream newSettings("settings");
@@ -45,10 +48,13 @@ Settings::Settings()
 	settingsList[SERVER] = loadSetting(SERVER);
 	settingsList[PLAYERINPUT1] = loadSetting(PLAYERINPUT1);
 	settingsList[PLAYERINPUT2] = loadSetting(PLAYERINPUT2);
+	settingsList[NETEM] = loadSetting(NETEM);
 	settingsList[SKIPEMULATION] = loadSetting(SKIPEMULATION);
 	settingsList[SKIPSIMULATION] = loadSetting(SKIPSIMULATION);
 	settingsList[SAVEEMULATION] = loadSetting(SAVEEMULATION);
 	settingsList[SAVESIMULATION] = loadSetting(SAVESIMULATION);
+	settingsList[APPLYNETEM] = loadSetting(APPLYNETEM);
+	settingsList[FPS] = loadSetting(FPS);
 	return;
 }//constructor
 
@@ -107,6 +113,36 @@ int Settings::setBool(enum Target option)
 	//write to correct target
 	settingsList[option] = setting;
 	saveSetting(option, setting);
+
+	return 0;
+}//setBool
+
+int Settings::setUInt(enum Target number)
+{
+	bool badValue = true;
+	std::cout << "value: ";
+	std::string setting;
+	std::cin >> setting;
+
+	while(badValue)
+	{
+		badValue = false;
+		for(unsigned long i = 0; i < setting.length(); i++)
+		{
+			if(setting[i] < '0' || setting[i] >  '9')
+			{
+				badValue = true;
+				std::cout << "invalid value, please try again" << std::endl;
+				std::cout << "value: ";
+				std::cin >> setting;
+				break;
+			}
+		}//for
+	}//while
+
+	//write to correct target
+	settingsList[number] = setting;
+	saveSetting(number, setting);
 
 	return 0;
 }//setBool
