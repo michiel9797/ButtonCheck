@@ -333,9 +333,7 @@ void Benchmark::setNetem(std::string ip_path, int &netemCount, int &nextNetemFra
 			nextNetemFrame = setNextNetemFrame(netemCount);
 		//if this is the firsts netem application and it doesn't need to be invoked on this frame
 		}else if(netemCount == 0){
-			//set up the qdisc for later
-			invokeNetem(ip_path, "add", "0ms", "0%");
-			
+			//set the next frame correctly
 			nextNetemFrame = setNextNetemFrame(netemCount);
 		}//else
 	//if we still need to invoke the netem
