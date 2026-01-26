@@ -23,6 +23,7 @@ void subMenu(Settings &CurrentSettings)
 		<< "| Save emulation file?		(y/n)	" << CurrentSettings.getSetting(SAVEEMULATION) << std::endl
 		<< "| Save simulation file? 	(y/n)	" << CurrentSettings.getSetting(SAVESIMULATION) << std::endl
 		<< "| Apply network emulation?  	(y/n)	" << CurrentSettings.getSetting(APPLYNETEM) << std::endl
+		<< "| Use Gilbert-Elliott model?	(y/n)	" << CurrentSettings.getSetting(GILBERTELLIOTT) << std::endl
 		<< "| FPS of the client program		" << CurrentSettings.getSetting(FPS) << std::endl
 		<< "_____________________________________________________________________________________________________" << std::endl
 		<< "1: Set skip emulation step" << std::endl
@@ -30,8 +31,9 @@ void subMenu(Settings &CurrentSettings)
 		<< "3: Set save emulation" << std::endl
 		<< "4: Set save simulation" << std::endl
 		<< "5: Set apply network emulation" << std::endl
-		<< "6: Set client FPS" << std::endl
-		<< "7: Return to main menu" << std::endl;
+		<< "6: Set Gilbert-Elliott model" << std::endl
+		<< "7: Set client FPS" << std::endl
+		<< "8: Return to main menu" << std::endl;
 		std::cout << "Choose option: ";
 		std::string input;
 		std::cin >> input;
@@ -58,8 +60,12 @@ void subMenu(Settings &CurrentSettings)
 		}else if(input == "6")
 		{
 			std::cout << std::endl;
-			CurrentSettings.setUInt(FPS);
+			CurrentSettings.setBool(GILBERTELLIOTT);
 		}else if(input == "7")
+		{
+			std::cout << std::endl;
+			CurrentSettings.setUInt(FPS);
+		}else if(input == "8")
 		{
 			std::cout << std::endl;
 			runSubMenu = false;

@@ -7,6 +7,8 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
+#include <stdlib.h>
+#include <time.h>
 #include <boost/process.hpp>
 #include <sys/wait.h>
 #include "benchmark.h"
@@ -15,8 +17,10 @@ namespace bp = boost::process;
 using json = nlohmann::json;
 
 Benchmark::Benchmark(Settings &CurrentSettings)
-	:	saveEmulation(CurrentSettings.getSetting(SAVEEMULATION)),
+	:	ipPath(bp::search_path("ip").string()),
+		saveEmulation(CurrentSettings.getSetting(SAVEEMULATION)),
 		saveSimulation(CurrentSettings.getSetting(SAVESIMULATION)),
+		gilbertElliott(CurrentSettings.getSetting(GILBERTELLIOTT)),
 		emulationTime(-1),
 		simulationTime(-1),
 		netemData({})
@@ -223,71 +227,133 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 	return 0;
 }//simulatedRun
 
-int Benchmark::setDevices(std::string ip_path)
+int Benchmark::setDevices()
 {
     //clean old connection setups if they exist
 	// delete veths 
-	bp::system(ip_path, "link", "del", "veth1");
-	bp::system(ip_path, "link", "del", "vethS1");
-	bp::system(ip_path, "link", "del", "veth2");
-	bp::system(ip_path, "link", "del", "vethS2");
+	bp::system(ipPath, "link", "del", "veth1");
+	bp::system(ipPath, "link", "del", "vethS1");
+	bp::system(ipPath, "link", "del", "veth2");
+	bp::system(ipPath, "link", "del", "vethS2");
 
 	// delete bridge
-	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "del", "br0");
+	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "del", "br0");
 
 	// delete namespaces
-	bp::system(ip_path, "netns", "del", "nsClient1");
-	bp::system(ip_path, "netns", "del", "nsClient2");
-	bp::system(ip_path, "netns", "del", "nsServer");
+	bp::system(ipPath, "netns", "del", "nsClient1");
+	bp::system(ipPath, "netns", "del", "nsClient2");
+	bp::system(ipPath, "netns", "del", "nsServer");
 
     //create namespaces
-    if (bp::system(ip_path, "netns", "add", "nsClient1") != 0) return -1;
-    if (bp::system(ip_path, "netns", "add", "nsServer")  != 0) return -1;
-    if (bp::system(ip_path, "netns", "add", "nsClient2") != 0) return -1;
+    if (bp::system(ipPath, "netns", "add", "nsClient1") != 0) return -1;
+    if (bp::system(ipPath, "netns", "add", "nsServer")  != 0) return -1;
+    if (bp::system(ipPath, "netns", "add", "nsClient2") != 0) return -1;
 
     //create veth pairs
-    if (bp::system(ip_path, "link", "add", "veth1", "type", "veth", "peer", "name", "vethS1") != 0) return -1;
-    if (bp::system(ip_path, "link", "add", "veth2", "type", "veth", "peer", "name", "vethS2") != 0) return -1;
+    if (bp::system(ipPath, "link", "add", "veth1", "type", "veth", "peer", "name", "vethS1") != 0) return -1;
+    if (bp::system(ipPath, "link", "add", "veth2", "type", "veth", "peer", "name", "vethS2") != 0) return -1;
 
     //move to namespaces
-    if (bp::system(ip_path, "link", "set", "veth1",  "netns", "nsClient1") != 0) return -1;
-    if (bp::system(ip_path, "link", "set", "vethS1", "netns", "nsServer")  != 0) return -1;
+    if (bp::system(ipPath, "link", "set", "veth1",  "netns", "nsClient1") != 0) return -1;
+    if (bp::system(ipPath, "link", "set", "vethS1", "netns", "nsServer")  != 0) return -1;
 
-    if (bp::system(ip_path, "link", "set", "veth2",  "netns", "nsClient2") != 0) return -1;
-    if (bp::system(ip_path, "link", "set", "vethS2", "netns", "nsServer")  != 0) return -1;
+    if (bp::system(ipPath, "link", "set", "veth2",  "netns", "nsClient2") != 0) return -1;
+    if (bp::system(ipPath, "link", "set", "vethS2", "netns", "nsServer")  != 0) return -1;
 
 	//create bridge
-	if (bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "add", "name", "br0", "type", "bridge") != 0) return -1;
+	if (bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "add", "name", "br0", "type", "bridge") != 0) return -1;
 
 	// Add both server veth interfaces to the bridge
-	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "master", "br0");
-	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "master", "br0");
+	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "master", "br0");
+	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "master", "br0");
 
     //set IP addresses
-	if (bp::system(ip_path, "netns", "exec", "nsServer", "ip", "addr", "add", "10.0.0.1/24", "dev", "br0") != 0) return -1;
-    if (bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.0.2/24", "dev", "veth1") != 0) return -1;
-    if (bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.0.3/24", "dev", "veth2") != 0) return -1;
+	if (bp::system(ipPath, "netns", "exec", "nsServer", "ip", "addr", "add", "10.0.0.1/24", "dev", "br0") != 0) return -1;
+    if (bp::system(ipPath, "netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.0.2/24", "dev", "veth1") != 0) return -1;
+    if (bp::system(ipPath, "netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.0.3/24", "dev", "veth2") != 0) return -1;
 
     //bring links up
-	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "br0", "up");
-	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up");
-	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up");
-	bp::system(ip_path, "netns", "exec", "nsServer", "ip", "link", "set", "lo", "up");
+	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "br0", "up");
+	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up");
+	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up");
+	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "lo", "up");
 
-    bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "link", "set", "veth1", "up");
-    bp::system(ip_path, "netns", "exec", "nsClient1", "ip", "link", "set", "lo", "up");
+    bp::system(ipPath, "netns", "exec", "nsClient1", "ip", "link", "set", "veth1", "up");
+    bp::system(ipPath, "netns", "exec", "nsClient1", "ip", "link", "set", "lo", "up");
 
-    bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "link", "set", "veth2", "up");
-    bp::system(ip_path, "netns", "exec", "nsClient2", "ip", "link", "set", "lo", "up");
+    bp::system(ipPath, "netns", "exec", "nsClient2", "ip", "link", "set", "veth2", "up");
+    bp::system(ipPath, "netns", "exec", "nsClient2", "ip", "link", "set", "lo", "up");
 
     return 0;
 }//setDevices
 
-void Benchmark::invokeNetem(std::string ip_path, std::string mode, 
-							std::string delay, std::string packetLoss)
+void Benchmark::callNetem(std::string mode, std::string delay, std::string packetLoss)
 {
-	bp::system(ip_path, "netns", "exec", "nsClient2", "tc", "qdisc",
-			   mode, "dev", "veth2", "root", "netem", "delay", delay, "loss", packetLoss);
+	bp::system(ipPath, "netns", "exec", "nsClient2", "tc", "qdisc",
+			   mode, "dev", "veth2", "root", "netem", "delay", delay, 
+			   "loss", packetLoss);
+}//invokeNetem
+
+void Benchmark::callGENetem(std::string mode, std::string delay, std::string enterBad,
+							  std::string exitBad, std::string goodLoss, std::string badLoss)
+{
+	bp::system(ipPath, "netns", "exec", "nsClient2", "tc", "qdisc",
+			   mode, "dev", "veth2", "root", "netem", "delay", delay, "loss", 
+			   "gemodel", enterBad, exitBad, goodLoss, badLoss);
+}//invokeGENetem
+
+std::string Benchmark::getEnterBadState(std::string avgBurstLength, std::string errorRate)
+{
+	float burstFloat = stoi(avgBurstLength);
+	//remove the %
+	errorRate.erase(errorRate.length() - 1);
+	float errorFloat = stoi(errorRate);
+	errorFloat = errorFloat / 100;
+	//calculate the needed value
+	float enterBad = errorFloat / (burstFloat * (1 - errorFloat));
+	enterBad = enterBad * 100;
+	std::string enterBadString = std::to_string(enterBad);
+	//add the %
+	enterBadString.insert(enterBadString.end(), '%');
+	return enterBadString;
+}//getEnterGoodState
+
+std::string Benchmark::getExitBadState(std::string avgBurstLength)
+{
+	float burstFloat = stoi(avgBurstLength);
+	//calculate the needed value
+	float exitBad = 1 / burstFloat;
+	exitBad = exitBad * 100;
+	std::string exitBadString = std::to_string(exitBad);
+	//add the %
+	exitBadString.insert(exitBadString.end(), '%');
+	return exitBadString;
+}//getExitGoodState
+
+void Benchmark::invokeNetem(int netemCount, std::string mode)
+{
+	std::string latency = netemData[netemCount]["Delay"];
+	//if we're using the Gilbert-Elliott model
+	if(gilbertElliott == "y")
+	{	//if we're using the simplified json format
+		if(!netemData[netemCount]["AvgBurstLength"].is_null())
+		{
+			std::string avgBurstLength = netemData[netemCount]["AvgBurstLength"];
+			std::string errorRate = netemData[netemCount]["ErrorRate"];
+			std::string enterBad = getEnterBadState(avgBurstLength, errorRate);
+			std::string exitBad = getExitBadState(avgBurstLength);
+			callGENetem(mode, latency, enterBad, exitBad, "100%", "0%");
+		} else {
+			std::string enterBad = netemData[netemCount]["EnterBad"];
+			std::string exitBad = netemData[netemCount]["ExitBad"];
+			std::string goodLoss = netemData[netemCount]["GoodLoss"];
+			std::string badLoss = netemData[netemCount]["BadLoss"];
+			callGENetem(mode, latency, enterBad, exitBad, goodLoss, badLoss);
+		}//else
+	} else {
+		std::string packetLoss = netemData[netemCount]["PacketLoss"];
+		callNetem(mode, latency, packetLoss);
+	}//else
 }//invokeNetem
 
 int Benchmark::setNextNetemFrame(int netemCount)
@@ -303,69 +369,43 @@ int Benchmark::setNextNetemFrame(int netemCount)
 	}//else
 }//setNextNetemFrame
 
-void Benchmark::setNetem(std::string ip_path, int &netemCount, int &nextNetemFrame)
+void Benchmark::setNetem(int &netemCount, int &nextNetemFrame)
 {
-	if(netemData.is_array())
-	{	//set up for a later check
-		std::string netemFrame;
-		if(netemCount == 0)
-		{
-			netemFrame = netemData[0]["Frame"];
-		}//if
+	std::string netemFrame;
+	if(netemCount == 0)
+	{
+		netemFrame = netemData[0]["Frame"];
+	}//if
 
-		//if this is not the first netem application
-		if(netemCount >= 1)
-		{	//extract and apply latency and packet loss
-			std::string latency = netemData[netemCount]["Delay"];
-			std::string packetLoss = netemData[netemCount]["PacketLoss"];
-			invokeNetem(ip_path, "change", latency, packetLoss);
-			
-			netemCount++;	
-			nextNetemFrame = setNextNetemFrame(netemCount);
-		//if this is the first netem application and it needs to be invoked on this frame
-		}else if(netemCount == 0 && stoi(netemFrame) == nextNetemFrame)
-		{	//extract and apply latency and packet loss
-			std::string latency = netemData[netemCount]["Delay"];
-			std::string packetLoss = netemData[netemCount]["PacketLoss"];
-			invokeNetem(ip_path, "add", latency, packetLoss);
-
-			netemCount++;
-			nextNetemFrame = setNextNetemFrame(netemCount);
-		//if this is the firsts netem application and it doesn't need to be invoked on this frame
-		}else if(netemCount == 0){
-			//set the next frame correctly
-			nextNetemFrame = setNextNetemFrame(netemCount);
-		}//else
-	//if we still need to invoke the netem
-	}else if(netemCount != -1){
-		//set up for the check
-		std::string netemFrame = netemData["Frame"];
-
-		//if the netem needs to be invoked on this frame
-		if(stoi(netemFrame) == nextNetemFrame)
-		{	//exctract and apply latency and packet loss
-			std::string latency = netemData["Delay"];
-			std::string packetLoss = netemData["PacketLoss"];
-			invokeNetem(ip_path, "add", latency, packetLoss);
-			netemCount = -1;
-		}else{
-			//set the next frame we need to invoke it
-			nextNetemFrame = stoi(netemFrame);
-		}//else
+	//if this is not the first netem application
+	if(netemCount >= 1)
+	{	
+		invokeNetem(netemCount, "change");
+		netemCount++;	
+		nextNetemFrame = setNextNetemFrame(netemCount);
+	//if this is the first netem application and it needs to be invoked on this frame
+	}else if(netemCount == 0 && stoi(netemFrame) == nextNetemFrame)
+	{
+		invokeNetem(netemCount, "add");
+		netemCount++;
+		nextNetemFrame = setNextNetemFrame(netemCount);
+	//if this is the firsts netem application and it doesn't need to be invoked on this frame
+	}else if(netemCount == 0){
+		//set the next frame correctly
+		nextNetemFrame = setNextNetemFrame(netemCount);
 	}//else
 }//setNetemStart
 
 int Benchmark::simulateRun(Settings &CurrentSettings)
 {
-    //locate the ip command
-    std::string ip_path = bp::search_path("ip").string();
-    if (ip_path.empty()) {
+    //check if the path to the IP function was correctly set
+    if (ipPath.empty()) {
         std::cerr << "Error: could not find the 'ip' command in PATH.\n";
         return -1;
     }
 
 	//set up network devices
-	if(setDevices(ip_path) == -1)
+	if(setDevices() == -1)
 	{
 		std::cerr << "Network setup failed" << std::endl;
 		return -1;
@@ -377,7 +417,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 	//set network emulation from start if needed
 	if(CurrentSettings.getSetting(APPLYNETEM) == "y")
 	{
-		setNetem(ip_path, netemCount, nextNetemFrame);
+		setNetem(netemCount, nextNetemFrame);
 	}//if
 
 	//to read the server state from
@@ -391,7 +431,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 
 	//run the server
 	bp::child server(
-		ip_path,
+		ipPath,
 		"netns",
 		"exec",
 		"nsServer",
@@ -432,7 +472,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 
 	//run client 1
 	bp::child client1(
-		ip_path,
+		ipPath,
 		"netns",
 		"exec",
 		"nsClient1",
@@ -450,7 +490,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 
 	//run client 2
 	bp::child client2(
-		ip_path,
+		ipPath,
 		"netns",
 		"exec",
 		"nsClient2",
@@ -484,7 +524,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 			//set network emulation if needed
 			if(CurrentSettings.getSetting(APPLYNETEM) == "y" && totalFrames == nextNetemFrame)
 			{
-				setNetem(ip_path, netemCount, nextNetemFrame);
+				setNetem(netemCount, nextNetemFrame);
 			}//if
 		}//if
 		if(frames >= framerate)

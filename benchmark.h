@@ -35,20 +35,34 @@ class Benchmark
 		//compare both runs, return the accuracy
 		float compareRuns();
 		//set up the server and client veth pairs
-		int setDevices(std::string ip_path);
-		//helper for calling tc netem
-		void invokeNetem(std::string ip_path, std::string mode1, 
-						 std::string delay, std::string loss);
+		int setDevices();
+		//calculate the chance of entering the bad state in the
+		//Gilbert-Elliott model when using the simplified json structure
+		std::string getEnterBadState(std::string avgBurstLength, std::string errorRate);
+		//calculate the chance of exiting the bad state in the
+		//Gilbert-Elliott model when using the simplified json structure
+		std::string getExitBadState(std::string avgBurstLength);
+		//invoke the correct netem
+		void invokeNetem(int netemCount, std::string mode);
+		//helper for calling tc netem when using Gilbert-Elliott
+		void callGENetem(std::string mode, std::string delay, std::string enterBad,
+						 std::string exitBad, std::string goodLoss, std::string badLoss);
+		//helper for calling tc netem normally
+		void callNetem(std::string mode, std::string delay, std::string loss);
 		//set which frame the next network simulation needs to be called
 		int setNextNetemFrame(int netemCount);
 		//set the state of the network emulation
-		void setNetem(std::string ip_path, int &netemCount, int &nextNetemFrame);
+		void setNetem(int &netemCount, int &nextNetemFrame);
 		//get the total CPU time from rusage
 		double getCPUTime(rusage usage);
+		//the path to the IP function
+		std::string ipPath;
 		//should the emulation run be removed after a benchmark
 		std::string saveEmulation;
 		//should the simulation run be removed after a benchmark
 		std::string saveSimulation;
+		//should we use the Gilbert-Elliott model
+		std::string gilbertElliott;
 		//total cpu time the emulation run spanned
 		double emulationTime;
 		//total cpu time the simulation run spanned

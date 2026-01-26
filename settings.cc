@@ -29,6 +29,7 @@ Settings::Settings()
 		settingsList[SAVEEMULATION] = "n";
 		settingsList[SAVESIMULATION] = "n";
 		settingsList[APPLYNETEM] = "y";
+		settingsList[GILBERTELLIOTT] = "n";
 		settingsList[FPS] =  "60";
 
 		//load them into the file
@@ -43,7 +44,7 @@ Settings::Settings()
 		return;
 	}//if
 
-	//if it does exist, load in the settingss
+	//if it does exist, load in the settings
 	settingsList[CLIENT] = loadSetting(CLIENT);
 	settingsList[SERVER] = loadSetting(SERVER);
 	settingsList[PLAYERINPUT1] = loadSetting(PLAYERINPUT1);
@@ -54,7 +55,9 @@ Settings::Settings()
 	settingsList[SAVEEMULATION] = loadSetting(SAVEEMULATION);
 	settingsList[SAVESIMULATION] = loadSetting(SAVESIMULATION);
 	settingsList[APPLYNETEM] = loadSetting(APPLYNETEM);
-	settingsList[FPS] = loadSetting(FPS);
+	settingsList[GILBERTELLIOTT] = loadSetting(GILBERTELLIOTT);
+	settingsList[FPS] =  loadSetting(FPS);
+
 	return;
 }//constructor
 
