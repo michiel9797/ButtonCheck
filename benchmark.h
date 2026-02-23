@@ -7,6 +7,7 @@
 #ifndef BenchmarkH
 #define BenchmarkH
 
+#include <vector>
 #include <sys/resource.h>
 #include "settings.h"
 #include "nlohmann-json/json.hpp"
@@ -34,6 +35,8 @@ class Benchmark
 		int simulateRun(Settings &CurrentSettings);
 		//compare both runs, return the accuracy
 		float compareRuns();
+		//a helper for migrating to Boost V2
+		auto boostCall(std::string exe, std::vector<std::string> args);
 		//set up the server and client veth pairs
 		int setDevices();
 		//calculate the chance of entering the bad state in the
@@ -55,8 +58,6 @@ class Benchmark
 		void setNetem(int &netemCount, int &nextNetemFrame);
 		//get the total CPU time from rusage
 		double getCPUTime(rusage usage);
-		//the path to the IP function
-		std::string ipPath;
 		//should the emulation run be removed after a benchmark
 		std::string saveEmulation;
 		//should the simulation run be removed after a benchmark

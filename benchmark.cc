@@ -8,17 +8,18 @@
 #include <iostream>
 #include <filesystem>
 #include <stdlib.h>
-#include <time.h>
 #include <boost/process.hpp>
+#include <boost/asio.hpp>
 #include <sys/wait.h>
 #include "benchmark.h"
 
 namespace bp = boost::process;
+namespace ba = boost::asio;
+namespace bs = boost::system;
 using json = nlohmann::json;
 
 Benchmark::Benchmark(Settings &CurrentSettings)
-	:	ipPath(bp::search_path("ip").string()),
-		saveEmulation(CurrentSettings.getSetting(SAVEEMULATION)),
+	:	saveEmulation(CurrentSettings.getSetting(SAVEEMULATION)),
 		saveSimulation(CurrentSettings.getSetting(SAVESIMULATION)),
 		gilbertElliott(CurrentSettings.getSetting(GILBERTELLIOTT)),
 		emulationTime(-1),
@@ -153,10 +154,12 @@ double Benchmark::getCPUTime(rusage usage)
 
 int Benchmark::emulateRun(Settings &CurrentSettings)
 {
+    ba::io_context io;
 	//to read the game state data and other communications from
-	bp::ipstream pipe_stream;
+    ba::readable_pipe pipe(io);
+    ba::streambuf buffer;
+    bs::error_code ec;
 
-	std::string received;
 	//make an output file for the received data
 	std::ofstream output("emulatedRun", std::ios::app);
 
@@ -164,22 +167,33 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 	//to reduce time between program launch and output reads
 	int timer = 0;
 	int frames = 0;
-	int framerate = std::stoi(CurrentSettings.getSetting(FPS));
+	const int framerate = std::stoi(CurrentSettings.getSetting(FPS));
 	bool connected = false;
 	bool first = true;
+	std::string received;
 
 	//run the client
-	bp::child client(
+	bp::process client(
+		io,
 		CurrentSettings.getSetting(CLIENT), 
-		"EMULATE", 
-		CurrentSettings.getSetting(PLAYERINPUT1), 
-		CurrentSettings.getSetting(PLAYERINPUT2), 
-		bp::std_out > pipe_stream
+		{
+			"EMULATE", 
+			CurrentSettings.getSetting(PLAYERINPUT1), 
+			CurrentSettings.getSetting(PLAYERINPUT2)
+		},
+		bp::process_stdio{nullptr, pipe, nullptr}
 	);
 
 	//as long as the booted process is running, receive its output
-	while(std::getline(pipe_stream, received))
-	{
+	while(ba::read_until(pipe, buffer, '\n', ec))
+	{	//break in case of an error
+		if (ec)
+            break; 
+
+		//load output into the received string
+        std::istream is(&buffer);
+		std::getline(is, received);
+
 		//if this is the first message
 		if(!connected)
 		{
@@ -227,79 +241,85 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 	return 0;
 }//simulatedRun
 
+auto Benchmark::boostCall(std::string exe, std::vector<std::string> args)
+{
+	ba::io_context io;
+	return bp::process(io, exe, args);
+}//boostCall
+
 int Benchmark::setDevices()
 {
     //clean old connection setups if they exist
 	// delete veths 
-	bp::system(ipPath, "link", "del", "veth1");
-	bp::system(ipPath, "link", "del", "vethS1");
-	bp::system(ipPath, "link", "del", "veth2");
-	bp::system(ipPath, "link", "del", "vethS2");
+	boostCall("/usr/bin/ip", {"link", "del", "veth1"}).wait();
+	boostCall("/usr/bin/ip", {"link", "del", "vethS1"}).wait();
+	boostCall("/usr/bin/ip", {"link", "del", "veth2"}).wait();
+	boostCall("/usr/bin/ip", {"link", "del", "vethS2"}).wait();
 
 	// delete bridge
-	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "del", "br0");
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "del", "br0"}).wait();
 
 	// delete namespaces
-	bp::system(ipPath, "netns", "del", "nsClient1");
-	bp::system(ipPath, "netns", "del", "nsClient2");
-	bp::system(ipPath, "netns", "del", "nsServer");
+	boostCall("/usr/bin/ip", {"netns", "del", "nsClient1"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "del", "nsClient2"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "del", "nsServer"}).wait();
 
     //create namespaces
-    if (bp::system(ipPath, "netns", "add", "nsClient1") != 0) return -1;
-    if (bp::system(ipPath, "netns", "add", "nsServer")  != 0) return -1;
-    if (bp::system(ipPath, "netns", "add", "nsClient2") != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"netns", "add", "nsClient1"}).wait() != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"netns", "add", "nsServer"}).wait()  != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"netns", "add", "nsClient2"}).wait() != 0) return -1;
 
     //create veth pairs
-    if (bp::system(ipPath, "link", "add", "veth1", "type", "veth", "peer", "name", "vethS1") != 0) return -1;
-    if (bp::system(ipPath, "link", "add", "veth2", "type", "veth", "peer", "name", "vethS2") != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"link", "add", "veth1", "type", "veth", "peer", "name", "vethS1"}).wait() != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"link", "add", "veth2", "type", "veth", "peer", "name", "vethS2"}).wait() != 0) return -1;
 
     //move to namespaces
-    if (bp::system(ipPath, "link", "set", "veth1",  "netns", "nsClient1") != 0) return -1;
-    if (bp::system(ipPath, "link", "set", "vethS1", "netns", "nsServer")  != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"link", "set", "veth1",  "netns", "nsClient1"}).wait() != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"link", "set", "vethS1", "netns", "nsServer"}).wait()  != 0) return -1;
 
-    if (bp::system(ipPath, "link", "set", "veth2",  "netns", "nsClient2") != 0) return -1;
-    if (bp::system(ipPath, "link", "set", "vethS2", "netns", "nsServer")  != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"link", "set", "veth2",  "netns", "nsClient2"}).wait() != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"link", "set", "vethS2", "netns", "nsServer"}).wait()  != 0) return -1;
 
 	//create bridge
-	if (bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "add", "name", "br0", "type", "bridge") != 0) return -1;
+	if (boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "add", "name", "br0", "type", "bridge"}).wait() != 0) return -1;
 
 	// Add both server veth interfaces to the bridge
-	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "master", "br0");
-	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "master", "br0");
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "master", "br0"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "master", "br0"}).wait();
 
     //set IP addresses
-	if (bp::system(ipPath, "netns", "exec", "nsServer", "ip", "addr", "add", "10.0.0.1/24", "dev", "br0") != 0) return -1;
-    if (bp::system(ipPath, "netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.0.2/24", "dev", "veth1") != 0) return -1;
-    if (bp::system(ipPath, "netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.0.3/24", "dev", "veth2") != 0) return -1;
+	if (boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "addr", "add", "10.0.0.1/24", "dev", "br0"}).wait() != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.0.2/24", "dev", "veth1"}).wait() != 0) return -1;
+    if (boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.0.3/24", "dev", "veth2"}).wait() != 0) return -1;
 
     //bring links up
-	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "br0", "up");
-	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up");
-	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up");
-	bp::system(ipPath, "netns", "exec", "nsServer", "ip", "link", "set", "lo", "up");
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "br0", "up"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "lo", "up"}).wait();
 
-    bp::system(ipPath, "netns", "exec", "nsClient1", "ip", "link", "set", "veth1", "up");
-    bp::system(ipPath, "netns", "exec", "nsClient1", "ip", "link", "set", "lo", "up");
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient1", "ip", "link", "set", "veth1", "up"}).wait();
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient1", "ip", "link", "set", "lo", "up"}).wait();
 
-    bp::system(ipPath, "netns", "exec", "nsClient2", "ip", "link", "set", "veth2", "up");
-    bp::system(ipPath, "netns", "exec", "nsClient2", "ip", "link", "set", "lo", "up");
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "ip", "link", "set", "veth2", "up"}).wait();
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "ip", "link", "set", "lo", "up"}).wait();
 
     return 0;
 }//setDevices
 
 void Benchmark::callNetem(std::string mode, std::string delay, std::string packetLoss)
 {
-	bp::system(ipPath, "netns", "exec", "nsClient2", "tc", "qdisc",
-			   mode, "dev", "veth2", "root", "netem", "delay", delay, 
-			   "loss", packetLoss);
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "tc", "qdisc",
+			  mode, "dev", "veth2", "root", "netem", "delay", delay, 
+			  "loss", packetLoss}).wait();
 }//invokeNetem
 
 void Benchmark::callGENetem(std::string mode, std::string delay, std::string enterBad,
 							  std::string exitBad, std::string goodLoss, std::string badLoss)
 {
-	bp::system(ipPath, "netns", "exec", "nsClient2", "tc", "qdisc",
-			   mode, "dev", "veth2", "root", "netem", "delay", delay, "loss", 
-			   "gemodel", enterBad, exitBad, goodLoss, badLoss);
+	boostCall("ip", {"netns", "exec", "nsClient2", "tc", "qdisc",
+			  mode, "dev", "veth2", "root", "netem", "delay", delay, "loss", 
+			  "gemodel", enterBad, exitBad, goodLoss, badLoss}).wait();
 }//invokeGENetem
 
 std::string Benchmark::getEnterBadState(std::string avgBurstLength, std::string errorRate)
@@ -397,14 +417,7 @@ void Benchmark::setNetem(int &netemCount, int &nextNetemFrame)
 }//setNetemStart
 
 int Benchmark::simulateRun(Settings &CurrentSettings)
-{
-    //check if the path to the IP function was correctly set
-    if (ipPath.empty()) {
-        std::cerr << "Error: could not find the 'ip' command in PATH.\n";
-        return -1;
-    }
-
-	//set up network devices
+{	//set up network devices
 	if(setDevices() == -1)
 	{
 		std::cerr << "Network setup failed" << std::endl;
@@ -416,32 +429,48 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 
 	//set network emulation from start if needed
 	if(CurrentSettings.getSetting(APPLYNETEM) == "y")
-	{
 		setNetem(netemCount, nextNetemFrame);
-	}//if
+
+	ba::io_context io;
+    bs::error_code ec;
+	std::string received;
 
 	//to read the server state from
-	bp::ipstream server_stream;
+    ba::readable_pipe server_pipe(io);
 
 	//to read the client state from
-	bp::ipstream client_stream;
+    ba::readable_pipe client_pipe(io);
 
 	//convert relative path to absolute path
 	std::string exe = std::filesystem::absolute(CurrentSettings.getSetting(SERVER));
 
 	//run the server
-	bp::child server(
-		ipPath,
-		"netns",
-		"exec",
-		"nsServer",
-		exe, 
-		"SERVER", 							//the mode the executable should run in
-		"10.0.0.1:40000",					//the IP and port the server must use
-		bp::std_out > server_stream
+	bp::process server(
+		io,
+		"/usr/bin/ip",
+		{
+			"netns",
+			"exec",
+			"nsServer",
+			exe, 
+			"SERVER", 			//the mode the executable should run in
+			"10.0.0.1:40000"	//the IP and port the server must use
+		},						
+		bp::process_stdio{nullptr, server_pipe, nullptr}
 	);
 
-	std::string received;
+	ba::streambuf server_buffer;
+
+	ba::read_until(server_pipe, server_buffer, '\n', ec);
+	
+	//if it threw an error
+	if(ec)
+	{
+		std::cerr << "Server threw an error on startup" << std::endl;
+		return -1;
+	}
+
+	std::istream server_stream(&server_buffer);
 	std::getline(server_stream, received);
 
 	//check for the correct identification
@@ -454,7 +483,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		return -1;
 	}//else
 
-	server_stream.pipe().close();
+	server_pipe.close();
 
 	//make an output file for the received data
 	std::ofstream output("simulatedRun", std::ios::app);
@@ -467,48 +496,65 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 	int framerate = std::stoi(CurrentSettings.getSetting(FPS));
 	bool first = true;
 
+	ba::streambuf client_buffer;
+
 	//convert relative path to absolute path
 	std::string input = std::filesystem::absolute(CurrentSettings.getSetting(PLAYERINPUT1));
 
 	//run client 1
-	bp::child client1(
-		ipPath,
-		"netns",
-		"exec",
-		"nsClient1",
-		exe, 
-		"SIMULATE", 						//the mode the client should be running in
-		input,								//the inputs for this client
-		"1",								//which player is playing here
-		"10.0.0.2",							//the IP that the client must use
-		"10.0.0.1:40000",					//the IP and port the server must use
-		bp::std_out > client_stream
+	bp::process client1(
+		io,
+		"/usr/bin/ip",
+		{
+			"netns",
+			"exec",
+			"nsClient1",
+			exe, 
+			"SIMULATE", 			//the mode the client should be running in
+			input,					//the inputs for this client
+			"1",					//which player is playing here
+			"10.0.0.2",				//the IP that the client must use
+			"10.0.0.1:40000"		//the IP and port the server must use
+		},
+		bp::process_stdio{nullptr, nullptr, nullptr}
 	);
 
 	//convert relative path to absolute path
 	input = std::filesystem::absolute(CurrentSettings.getSetting(PLAYERINPUT2));
 
 	//run client 2
-	bp::child client2(
-		ipPath,
-		"netns",
-		"exec",
-		"nsClient2",
-		exe, 
-		"SIMULATE", 						//the mode the client should be running in
-		input,								//the inputs for this client
-		"2",								//which player is playing here
-		"10.0.0.3",							//the IP that the client must use
-		"10.0.0.1:40000",					//the IP and port the server must use
-		bp::std_out > bp::null
+	bp::process client2(
+		io,
+		"/usr/bin/ip",
+		{
+			"netns",
+			"exec",
+			"nsClient2",
+			exe, 
+			"SIMULATE", 				//the mode the client should be running in
+			input,						//the inputs for this client
+			"2",						//which player is playing here
+			"10.0.0.3",					//the IP that the client must use
+			"10.0.0.1:40000"			//the IP and port the server must use
+		},
+		bp::process_stdio{nullptr, client_pipe, nullptr}
 	);
 
 	std::cout << "Running simulation" << std::endl;
 	std::cout << "Game time:" << std::endl;
 
 	//as long as the booted process is running, receive its output
-	while(std::getline(client_stream, received))
+	while(true)
 	{
+		ba::read_until(client_pipe, client_buffer, '\n', ec);
+
+		//if the client threw an error or stopped
+		if(ec)
+			break;
+
+		std::istream is(&client_buffer);
+		std::getline(is, received);
+
 		if (!received.empty())
 		{
 			frames++;

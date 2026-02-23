@@ -36,3 +36,5 @@ ButtonCheck
 settings
 libtuntap/build
 Makefile
+emulatedRun
+simulatedRun
