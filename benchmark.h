@@ -2,13 +2,12 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 30-03-2025
-
 #ifndef BenchmarkH
 #define BenchmarkH
 
 #include <vector>
 #include <sys/resource.h>
+
 #include "settings.h"
 #include "nlohmann-json/json.hpp"
 

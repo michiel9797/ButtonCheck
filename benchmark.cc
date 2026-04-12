@@ -2,8 +2,6 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 30-03-2025
-
 #include <fstream>
 #include <iostream>
 #include <filesystem>
@@ -11,6 +9,7 @@
 #include <boost/process.hpp>
 #include <boost/asio.hpp>
 #include <sys/wait.h>
+
 #include "benchmark.h"
 
 namespace bp = boost::process;
@@ -32,21 +31,16 @@ Benchmark::Benchmark(Settings &CurrentSettings)
 Benchmark::~Benchmark()
 {
 	if(saveEmulation == "n")
-	{
 		std::remove("emulatedRun");
-	}//if
+	
 	if(saveSimulation == "n")
-	{
 		std::remove("simulatedRun");
-	}//if
 }//~Benchmark
 
 int Benchmark::startBenchmark(Settings &CurrentSettings)
 {
 	if(checkSettings(CurrentSettings) == -1)
-	{
 		return -1;
-	}
 
 	bool compare = true;
 
@@ -56,14 +50,16 @@ int Benchmark::startBenchmark(Settings &CurrentSettings)
 	{	//remove old run if needed
 		if(file1.good())
 			std::remove("emulatedRun");
+
+		//start the emulation
 		if(emulateRun(CurrentSettings) == -1)
 		{
 			std::cerr << "Emulation failed" << std::endl;
 			return -1;
 		}//if
-	}else if(!file1.good()){
+	//we shouldn't compare runs if we don't have an emulation file
+	}else if(!file1.good())
 		compare = false;
-	}//else
 
 	std::ifstream file2("simulatedRun");
 
@@ -92,25 +88,26 @@ int Benchmark::startBenchmark(Settings &CurrentSettings)
 			std::cerr << "Simulation failed" << std::endl;
 			return -1;
 		}//if
-	}else if(!file2.good()){
+	//we shouldn't compare runs if we don't have a simulation file
+	}else if(!file2.good())
 		compare = false;
-	}//else
 
+	//if we can compare runs
 	if(compare)
 	{
 		std::cout << "Accuracy: " << compareRuns()  << "%" << std::endl;
+		//if we have emulation times to compare, do so. Only works if 
+		//both the emulation and simulation were done this run
 		if((emulationTime != -1) && (simulationTime != -1))
-		{
 			std::cout << "Difference in execution time: " 
 					  << simulationTime - emulationTime << "s" << std::endl;
-		}//if	
 	}//if
 
 	return 0;
 }//startBenchmark
 
 int Benchmark::checkSettings(Settings &CurrentSettings)
-{
+{	//if we're not skipping the emulation but we miss data needed to run it
 	if(CurrentSettings.getSetting(SKIPEMULATION) == "n" &&
 	   (CurrentSettings.getSetting(CLIENT) == "None" ||
 	    CurrentSettings.getSetting(PLAYERINPUT1) == "None" ||
@@ -120,6 +117,7 @@ int Benchmark::checkSettings(Settings &CurrentSettings)
 		return -1;
 	}//if
 
+	//if we're not skipping the simulation but we miss data needed to run it
 	if(CurrentSettings.getSetting(SKIPSIMULATION) == "n" &&
 	   (CurrentSettings.getSetting(CLIENT) == "None" ||
 	    CurrentSettings.getSetting(SERVER) == "None" ||
@@ -130,6 +128,7 @@ int Benchmark::checkSettings(Settings &CurrentSettings)
 		return -1;
 	}//if
 
+	//if we want to apply netem but we don't have a file specifying how
 	if(CurrentSettings.getSetting(APPLYNETEM) == "y" &&
 	   CurrentSettings.getSetting(SKIPSIMULATION) == "n" &&
 	   CurrentSettings.getSetting(NETEM) == "None")
@@ -187,7 +186,7 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 	//as long as the booted process is running, receive its output
 	while(ba::read_until(pipe, buffer, '\n', ec))
 	{	//break in case of an error
-		if (ec)
+		if(ec)
             break; 
 
 		//load output into the received string
@@ -198,27 +197,26 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 		if(!connected)
 		{
 			//check for the correct identification
-			if (received == "EMULATE START")
+			if(received == "EMULATE START")
 			{
 				connected = true;
 				std::cout << "Running emulation" << std::endl;
 				std::cout << "Game time:" << std::endl;
-			} else { //if it fails, terminate it
+			}else{ //if it fails, terminate it
 				client.terminate();
 				std::cerr << "Client did not identify correctly\n";
 				return -1;
 			}//else
-		} else { //if the identification went correctly
-			if (!received.empty())
+		}else{ //if the identification went correctly
+			if(!received.empty())
 			{
 				frames++;
-				if (first)
+				if(first)
 				{
 					output << received;
 					first = false;
-				}else{
+				}else
 					output << "\n" << received;
-				}//else
 			}//if
 			if(frames >= framerate)
 			{
@@ -250,75 +248,75 @@ auto Benchmark::boostCall(std::string exe, std::vector<std::string> args)
 int Benchmark::setDevices()
 {
     //clean old connection setups if they exist
-	// delete veths 
-	boostCall("/usr/bin/ip", {"link", "del", "veth1"}).wait();
-	boostCall("/usr/bin/ip", {"link", "del", "vethS1"}).wait();
-	boostCall("/usr/bin/ip", {"link", "del", "veth2"}).wait();
-	boostCall("/usr/bin/ip", {"link", "del", "vethS2"}).wait();
+	//delete veths 
+	boostCall("/usr/bin/ip", {"link", "del", "BCveth1"}).wait();
+	boostCall("/usr/bin/ip", {"link", "del", "BCvethS1"}).wait();
+	boostCall("/usr/bin/ip", {"link", "del", "BCveth2"}).wait();
+	boostCall("/usr/bin/ip", {"link", "del", "BCvethS2"}).wait();
 
-	// delete bridge
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "del", "br0"}).wait();
+	//delete bridge
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "del", "BCbridge"}).wait();
 
-	// delete namespaces
-	boostCall("/usr/bin/ip", {"netns", "del", "nsClient1"}).wait();
-	boostCall("/usr/bin/ip", {"netns", "del", "nsClient2"}).wait();
-	boostCall("/usr/bin/ip", {"netns", "del", "nsServer"}).wait();
+	//delete namespaces
+	boostCall("/usr/bin/ip", {"netns", "del", "nsBCClient1"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "del", "nsBCClient2"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "del", "nsBCServer"}).wait();
 
     //create namespaces
-    if (boostCall("/usr/bin/ip", {"netns", "add", "nsClient1"}).wait() != 0) return -1;
-    if (boostCall("/usr/bin/ip", {"netns", "add", "nsServer"}).wait()  != 0) return -1;
-    if (boostCall("/usr/bin/ip", {"netns", "add", "nsClient2"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"netns", "add", "nsBCClient1"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"netns", "add", "nsBCClient2"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"netns", "add", "nsBCServer"}).wait()  != 0) return -1;
 
     //create veth pairs
-    if (boostCall("/usr/bin/ip", {"link", "add", "veth1", "type", "veth", "peer", "name", "vethS1"}).wait() != 0) return -1;
-    if (boostCall("/usr/bin/ip", {"link", "add", "veth2", "type", "veth", "peer", "name", "vethS2"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"link", "add", "BCveth1", "type", "veth", "peer", "name", "BCvethS1"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"link", "add", "BCveth2", "type", "veth", "peer", "name", "BCvethS2"}).wait() != 0) return -1;
 
     //move to namespaces
-    if (boostCall("/usr/bin/ip", {"link", "set", "veth1",  "netns", "nsClient1"}).wait() != 0) return -1;
-    if (boostCall("/usr/bin/ip", {"link", "set", "vethS1", "netns", "nsServer"}).wait()  != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"link", "set", "BCveth1",  "netns", "nsBCClient1"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"link", "set", "BCvethS1", "netns", "nsBCServer"}).wait()  != 0) return -1;
 
-    if (boostCall("/usr/bin/ip", {"link", "set", "veth2",  "netns", "nsClient2"}).wait() != 0) return -1;
-    if (boostCall("/usr/bin/ip", {"link", "set", "vethS2", "netns", "nsServer"}).wait()  != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"link", "set", "BCveth2",  "netns", "nsBCClient2"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"link", "set", "BCvethS2", "netns", "nsBCServer"}).wait()  != 0) return -1;
 
 	//create bridge
-	if (boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "add", "name", "br0", "type", "bridge"}).wait() != 0) return -1;
+	if(boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "add", "name", "BCbridge", "type", "bridge"}).wait() != 0) return -1;
 
-	// Add both server veth interfaces to the bridge
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "master", "br0"}).wait();
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "master", "br0"}).wait();
+	//Add both server veth interfaces to the bridge
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "set", "BCvethS1", "master", "BCbridge"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "set", "BCvethS2", "master", "BCbridge"}).wait();
 
     //set IP addresses
-	if (boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "addr", "add", "10.0.0.1/24", "dev", "br0"}).wait() != 0) return -1;
-    if (boostCall("/usr/bin/ip", {"netns", "exec", "nsClient1", "ip", "addr", "add", "10.0.0.2/24", "dev", "veth1"}).wait() != 0) return -1;
-    if (boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "ip", "addr", "add", "10.0.0.3/24", "dev", "veth2"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient1", "ip", "addr", "add", "10.0.0.2/24", "dev", "BCveth1"}).wait() != 0) return -1;
+    if(boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient2", "ip", "addr", "add", "10.0.0.3/24", "dev", "BCveth2"}).wait() != 0) return -1;
+	if(boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "addr", "add", "10.0.0.1/24", "dev", "BCbridge"}).wait() != 0) return -1;
 
     //bring links up
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "br0", "up"}).wait();
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS1", "up"}).wait();
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "vethS2", "up"}).wait();
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsServer", "ip", "link", "set", "lo", "up"}).wait();
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient1", "ip", "link", "set", "BCveth1", "up"}).wait();
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient1", "ip", "link", "set", "lo", "up"}).wait();
 
-    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient1", "ip", "link", "set", "veth1", "up"}).wait();
-    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient1", "ip", "link", "set", "lo", "up"}).wait();
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient2", "ip", "link", "set", "BCveth2", "up"}).wait();
+    boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient2", "ip", "link", "set", "lo", "up"}).wait();
 
-    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "ip", "link", "set", "veth2", "up"}).wait();
-    boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "ip", "link", "set", "lo", "up"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "set", "BCbridge", "up"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "set", "BCvethS1", "up"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "set", "BCvethS2", "up"}).wait();
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCServer", "ip", "link", "set", "lo", "up"}).wait();
 
     return 0;
 }//setDevices
 
 void Benchmark::callNetem(std::string mode, std::string delay, std::string packetLoss)
 {
-	boostCall("/usr/bin/ip", {"netns", "exec", "nsClient2", "tc", "qdisc",
-			  mode, "dev", "veth2", "root", "netem", "delay", delay, 
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient2", "tc", "qdisc",
+			  mode, "dev", "BCveth2", "root", "netem", "delay", delay, 
 			  "loss", packetLoss}).wait();
 }//invokeNetem
 
 void Benchmark::callGENetem(std::string mode, std::string delay, std::string enterBad,
 							  std::string exitBad, std::string goodLoss, std::string badLoss)
 {
-	boostCall("ip", {"netns", "exec", "nsClient2", "tc", "qdisc",
-			  mode, "dev", "veth2", "root", "netem", "delay", delay, "loss", 
+	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient2", "tc", "qdisc",
+			  mode, "dev", "BCveth2", "root", "netem", "delay", delay, "loss", 
 			  "gemodel", enterBad, exitBad, goodLoss, badLoss}).wait();
 }//invokeGENetem
 
@@ -363,14 +361,14 @@ void Benchmark::invokeNetem(int netemCount, std::string mode)
 			std::string enterBad = getEnterBadState(avgBurstLength, errorRate);
 			std::string exitBad = getExitBadState(avgBurstLength);
 			callGENetem(mode, latency, enterBad, exitBad, "100%", "0%");
-		} else {
+		}else{
 			std::string enterBad = netemData[netemCount]["EnterBad"];
 			std::string exitBad = netemData[netemCount]["ExitBad"];
 			std::string goodLoss = netemData[netemCount]["GoodLoss"];
 			std::string badLoss = netemData[netemCount]["BadLoss"];
 			callGENetem(mode, latency, enterBad, exitBad, goodLoss, badLoss);
 		}//else
-	} else {
+	}else{
 		std::string packetLoss = netemData[netemCount]["PacketLoss"];
 		callNetem(mode, latency, packetLoss);
 	}//else
@@ -393,9 +391,7 @@ void Benchmark::setNetem(int &netemCount, int &nextNetemFrame)
 {
 	std::string netemFrame;
 	if(netemCount == 0)
-	{
 		netemFrame = netemData[0]["Frame"];
-	}//if
 
 	//if this is not the first netem application
 	if(netemCount >= 1)
@@ -451,12 +447,13 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		{
 			"netns",
 			"exec",
-			"nsServer",
+			"nsBCServer",
 			exe, 
 			"SERVER", 			//the mode the executable should run in
-			"10.0.0.1:40000"	//the IP and port the server must use
+			"10.0.0.1:40000",	//the IP and port the server must use
+			CurrentSettings.getSetting(CUSTOMSERVER)
 		},						
-		bp::process_stdio{nullptr, server_pipe, nullptr}
+		bp::process_stdio{nullptr, server_pipe, {}}   //!!!REMOVE!!!
 	);
 
 	ba::streambuf server_buffer;
@@ -474,10 +471,9 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 	std::getline(server_stream, received);
 
 	//check for the correct identification
-	if (received == "SERVER START")
-	{
+	if(received == "SERVER START")
 		std::cout << "Server started" << std::endl;
-	} else { //if it fails, terminate it
+	else{ //if it fails, terminate it
 		server.terminate();
 		std::cerr << "Server did not identify correctly\n";
 		return -1;
@@ -508,13 +504,14 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		{
 			"netns",
 			"exec",
-			"nsClient1",
+			"nsBCClient1",
 			exe, 
 			"SIMULATE", 			//the mode the client should be running in
 			input,					//the inputs for this client
 			"1",					//which player is playing here
 			"10.0.0.2",				//the IP that the client must use
-			"10.0.0.1:40000"		//the IP and port the server must use
+			"10.0.0.1:40000",		//the IP and port the server must use
+			CurrentSettings.getSetting(CUSTOMCLIENT)
 		},
 		bp::process_stdio{nullptr, nullptr, nullptr}
 	);
@@ -529,15 +526,16 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		{
 			"netns",
 			"exec",
-			"nsClient2",
+			"nsBCClient2",
 			exe, 
 			"SIMULATE", 				//the mode the client should be running in
 			input,						//the inputs for this client
 			"2",						//which player is playing here
 			"10.0.0.3",					//the IP that the client must use
-			"10.0.0.1:40000"			//the IP and port the server must use
+			"10.0.0.1:40000",			//the IP and port the server must use
+			CurrentSettings.getSetting(CUSTOMCLIENT)
 		},
-		bp::process_stdio{nullptr, client_pipe, nullptr}
+		bp::process_stdio{nullptr, client_pipe, {}}
 	);
 
 	std::cout << "Running simulation" << std::endl;
@@ -555,23 +553,20 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		std::istream is(&client_buffer);
 		std::getline(is, received);
 
-		if (!received.empty())
+		if(!received.empty())
 		{
 			frames++;
 			totalFrames++;
-			if (first)
+			if(first)
 			{
 				output << received;
 				first = false;
-			}else{
+			}else
 				output << "\n" << received;
-			}//else
 
 			//set network emulation if needed
 			if(CurrentSettings.getSetting(APPLYNETEM) == "y" && totalFrames == nextNetemFrame)
-			{
 				setNetem(netemCount, nextNetemFrame);
-			}//if
 		}//if
 		if(frames >= framerate)
 		{
@@ -584,6 +579,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		}//if
 	}//while
 
+	server.terminate();
 	server.wait();
 
 	struct rusage usage;
@@ -635,9 +631,8 @@ float Benchmark::compareRuns()
 			break;
 
 		if(emulatedLine != simulatedLine)
-		{
 			unequal++;
-		}//if
+
 		frameCount++;
 	}//while
 	return 100 - ((100/frameCount) * unequal);

@@ -2,8 +2,6 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 28-03-2025
-
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -16,7 +14,7 @@ Settings::Settings()
 	settingsFile.open("settings");
 
 	//if it doesnt exist, make a new one
-	if (!settingsFile.is_open())
+	if(!settingsFile.is_open())
 	{		
 		//set current settings to a null value
 		settingsList[CLIENT] = "None";
@@ -31,14 +29,15 @@ Settings::Settings()
 		settingsList[APPLYNETEM] = "y";
 		settingsList[GILBERTELLIOTT] = "n";
 		settingsList[FPS] =  "60";
+		settingsList[CUSTOMCLIENT] = "";
+		settingsList[CUSTOMSERVER] = "";
 
 		//load them into the file
 		std::ofstream newSettings("settings");
 
 		for (int i = 0; i < settingsCount; i++)
-		{
 			newSettings << settingsList[i] << std::endl;
-		}//for
+
 		newSettings.close();
 
 		return;
@@ -57,6 +56,8 @@ Settings::Settings()
 	settingsList[APPLYNETEM] = loadSetting(APPLYNETEM);
 	settingsList[GILBERTELLIOTT] = loadSetting(GILBERTELLIOTT);
 	settingsList[FPS] =  loadSetting(FPS);
+	settingsList[CUSTOMCLIENT] = loadSetting(CUSTOMCLIENT);
+	settingsList[CUSTOMSERVER] = loadSetting(CUSTOMSERVER);
 
 	return;
 }//constructor
@@ -70,12 +71,8 @@ int Settings::setPath(enum Target file)
 
 	//switch / with \ for the exists function
 	for(unsigned long i = 0; i < path.length(); i++)
-	{
 		if(path[i] == '\\')
-		{
 			path[i] = '/';
-		}//if
-	}//for
 
 	while (!std::filesystem::exists(path))
 	{
@@ -85,12 +82,8 @@ int Settings::setPath(enum Target file)
 
 		//switch / with \ for the open function
 		for(unsigned long i = 0; i < path.length(); i++)
-		{
 			if(path[i] == '\\')
-			{
 				path[i] = '/';
-			}//if
-		}//for
 	}//while
 
 	//write to correct target
@@ -100,8 +93,23 @@ int Settings::setPath(enum Target file)
 	return 0;
 }//setPath
 
+int Settings::setString(enum Target option)
+{
+	//get string
+	std::cout << "string: ";
+	std::string input;
+	std::cin >> input;
+
+	//write to correct target
+	settingsList[option] = input;
+	saveSetting(option, input); 
+	
+	return 0;
+}
+
 int Settings::setBool(enum Target option)
 {
+	//get bool (yes or no)
 	std::cout << "[y/n]: ";
 	std::string setting;
 	std::cin >> setting;
@@ -122,6 +130,7 @@ int Settings::setBool(enum Target option)
 
 int Settings::setUInt(enum Target number)
 {
+	//get uint
 	bool badValue = true;
 	std::cout << "value: ";
 	std::string setting;
@@ -161,7 +170,7 @@ int Settings::saveSetting(enum Target option, std::string setting)
 	//open settings file
 	std::ifstream readFile;
 	readFile.open("settings");
-	if (!readFile.is_open())
+	if(!readFile.is_open())
 	{
 		std::cerr << "couldn't find settings file" << std::endl;
 		return -1;
@@ -170,9 +179,8 @@ int Settings::saveSetting(enum Target option, std::string setting)
 	//read settings into an array
 	std::string editSettings[settingsCount];
 	for (int i = 0; i < settingsCount; i++)
-	{
 		getline(readFile, editSettings[i]);
-	}//for
+
 	readFile.close();
 
 	//save correct setting
@@ -182,9 +190,8 @@ int Settings::saveSetting(enum Target option, std::string setting)
 	std::ofstream writeFile;
 	writeFile.open("settings");
 	for (int i = 0; i < settingsCount; i++)
-	{
 		writeFile << editSettings[i] + '\n';
-	}//for
+
 	writeFile.close();
 	return 0;
 }//saveSetting
@@ -194,7 +201,7 @@ std::string Settings::loadSetting(enum Target option)
 	//open settings file
 	std::ifstream settingsFile;
 	settingsFile.open("settings");
-	if (!settingsFile.is_open())
+	if(!settingsFile.is_open())
 	{
 		std::cerr << "couldn't find settings file" << std::endl;
 		return "";
@@ -203,9 +210,8 @@ std::string Settings::loadSetting(enum Target option)
 	//read settings into an array
 	std::string loadSettings[settingsCount];
 	for (int i = 0; i < settingsCount; i++)
-	{
 		getline(settingsFile, loadSettings[i]);
-	}//for
+
 	settingsFile.close();
 
 	//return target option

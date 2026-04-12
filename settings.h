@@ -2,8 +2,6 @@
 //Made by Michiel van der Bijl
 //Bachelor thesis project 2025 Leiden University
 
-//Last edited: 29-03-2025
-
 #ifndef SettingsH
 #define SettingsH
 
@@ -20,17 +18,21 @@ enum Target
 	SAVESIMULATION,
 	APPLYNETEM,
 	GILBERTELLIOTT,
-	FPS
+	FPS,
+	CUSTOMCLIENT,
+	CUSTOMSERVER
 };//target
 
 class Settings 
 {
 	public:
 		//constructor, fetches all the saved settings from the settings file
-		//and makes one if it doesn't exist yet
+		//or makes one if it doesn't exist yet
 		Settings();
 		//set path to target
 		int setPath(enum Target file);
+		//set a string
+		int setString(enum Target option);
 		//set a bool
 		int setBool(enum Target option);
 		//set a uint
@@ -44,7 +46,7 @@ class Settings
 		//load paths to target from the settings file, returns "" on failure
 		std::string loadSetting(enum Target option);
 		//amount of settings, equals lines in the settings file
-		const static int settingsCount = 12;
+		const static int settingsCount = 14;
 		//array containing all settings
 		//0:  path to client
 		//1:  path to server
@@ -58,6 +60,8 @@ class Settings
 		//9:  should network emulation be applied
 		//10: should the Gilbert-Elliott packet loss model be applied
 		//11: fps the client program runs at
+		//12: custom client call argument
+		//13: custom server call argument
 		std::string settingsList[settingsCount];
 };//settings
 
