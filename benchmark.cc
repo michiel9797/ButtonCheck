@@ -17,7 +17,7 @@ namespace ba = boost::asio;
 namespace bs = boost::system;
 using json = nlohmann::json;
 
-Benchmark::Benchmark(Settings &CurrentSettings)
+Benchmark::Benchmark(Settings CurrentSettings)
 	:	saveEmulation(CurrentSettings.getSetting(SAVEEMULATION)),
 		saveSimulation(CurrentSettings.getSetting(SAVESIMULATION)),
 		gilbertElliott(CurrentSettings.getSetting(GILBERTELLIOTT)),
@@ -37,7 +37,7 @@ Benchmark::~Benchmark()
 		std::remove("simulatedRun");
 }//~Benchmark
 
-int Benchmark::startBenchmark(Settings &CurrentSettings)
+int Benchmark::startBenchmark(Settings CurrentSettings)
 {
 	if(checkSettings(CurrentSettings) == -1)
 		return -1;
@@ -106,7 +106,7 @@ int Benchmark::startBenchmark(Settings &CurrentSettings)
 	return 0;
 }//startBenchmark
 
-int Benchmark::checkSettings(Settings &CurrentSettings)
+const short Benchmark::checkSettings(Settings CurrentSettings)
 {	//if we're not skipping the emulation but we miss data needed to run it
 	if(CurrentSettings.getSetting(SKIPEMULATION) == "n" &&
 	   (CurrentSettings.getSetting(CLIENT) == "None" ||
@@ -140,7 +140,7 @@ int Benchmark::checkSettings(Settings &CurrentSettings)
 	return 0;
 }//checkSettings
 
-double Benchmark::getCPUTime(rusage usage)
+const double Benchmark::getCPUTime(const rusage usage)
 {
 	double userTime = usage.ru_utime.tv_sec +
                       usage.ru_utime.tv_usec / 1e6;
@@ -151,7 +151,7 @@ double Benchmark::getCPUTime(rusage usage)
 	return userTime + systemTime;
 }//getCPUTime
 
-int Benchmark::emulateRun(Settings &CurrentSettings)
+short Benchmark::emulateRun(Settings CurrentSettings)
 {
     ba::io_context io;
 	//to read the game state data and other communications from
@@ -164,9 +164,9 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 
 	//to show how much time has passed so far, initialize now 
 	//to reduce time between program launch and output reads
-	int timer = 0;
-	int frames = 0;
-	const int framerate = std::stoi(CurrentSettings.getSetting(FPS));
+	short timer = 0;
+	short frames = 0;
+	const short framerate = std::stoi(CurrentSettings.getSetting(FPS));
 	bool connected = false;
 	bool first = true;
 	std::string received;
@@ -239,13 +239,13 @@ int Benchmark::emulateRun(Settings &CurrentSettings)
 	return 0;
 }//simulatedRun
 
-auto Benchmark::boostCall(std::string exe, std::vector<std::string> args)
+auto Benchmark::boostCall(const std::string exe, const std::vector<std::string> args)
 {
 	ba::io_context io;
 	return bp::process(io, exe, args);
 }//boostCall
 
-int Benchmark::setDevices()
+const short Benchmark::setDevices()
 {
     //clean old connection setups if they exist
 	//delete veths 
@@ -305,24 +305,24 @@ int Benchmark::setDevices()
     return 0;
 }//setDevices
 
-void Benchmark::callNetem(std::string mode, std::string delay, std::string packetLoss)
+const void Benchmark::callNetem(const std::string mode, const std::string delay, const std::string packetLoss)
 {
 	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient2", "tc", "qdisc",
 			  mode, "dev", "BCveth2", "root", "netem", "delay", delay, 
 			  "loss", packetLoss}).wait();
 }//invokeNetem
 
-void Benchmark::callGENetem(std::string mode, std::string delay, std::string enterBad,
-							  std::string exitBad, std::string goodLoss, std::string badLoss)
+const void Benchmark::callGENetem(const std::string mode, const std::string delay, const std::string enterBad,
+							 	  const std::string exitBad, const std::string goodLoss, const std::string badLoss)
 {
 	boostCall("/usr/bin/ip", {"netns", "exec", "nsBCClient2", "tc", "qdisc",
 			  mode, "dev", "BCveth2", "root", "netem", "delay", delay, "loss", 
 			  "gemodel", enterBad, exitBad, goodLoss, badLoss}).wait();
 }//invokeGENetem
 
-std::string Benchmark::getEnterBadState(std::string avgBurstLength, std::string errorRate)
+const std::string Benchmark::getEnterBadState(const std::string avgBurstLength, std::string errorRate)
 {
-	float burstFloat = stoi(avgBurstLength);
+	const float burstFloat = stoi(avgBurstLength);
 	//remove the %
 	errorRate.erase(errorRate.length() - 1);
 	float errorFloat = stoi(errorRate);
@@ -336,9 +336,9 @@ std::string Benchmark::getEnterBadState(std::string avgBurstLength, std::string 
 	return enterBadString;
 }//getEnterGoodState
 
-std::string Benchmark::getExitBadState(std::string avgBurstLength)
+const std::string Benchmark::getExitBadState(const std::string avgBurstLength)
 {
-	float burstFloat = stoi(avgBurstLength);
+	const float burstFloat = stoi(avgBurstLength);
 	//calculate the needed value
 	float exitBad = 1 / burstFloat;
 	exitBad = exitBad * 100;
@@ -348,37 +348,37 @@ std::string Benchmark::getExitBadState(std::string avgBurstLength)
 	return exitBadString;
 }//getExitGoodState
 
-void Benchmark::invokeNetem(int netemCount, std::string mode)
+const void Benchmark::invokeNetem(const short netemCount, const std::string mode)
 {
-	std::string latency = netemData[netemCount]["Delay"];
+	const std::string latency = netemData[netemCount]["Delay"];
 	//if we're using the Gilbert-Elliott model
 	if(gilbertElliott == "y")
 	{	//if we're using the simplified json format
 		if(!netemData[netemCount]["AvgBurstLength"].is_null())
 		{
-			std::string avgBurstLength = netemData[netemCount]["AvgBurstLength"];
-			std::string errorRate = netemData[netemCount]["ErrorRate"];
-			std::string enterBad = getEnterBadState(avgBurstLength, errorRate);
-			std::string exitBad = getExitBadState(avgBurstLength);
+			const std::string avgBurstLength = netemData[netemCount]["AvgBurstLength"];
+			const std::string errorRate = netemData[netemCount]["ErrorRate"];
+			const std::string enterBad = getEnterBadState(avgBurstLength, errorRate);
+			const std::string exitBad = getExitBadState(avgBurstLength);
 			callGENetem(mode, latency, enterBad, exitBad, "100%", "0%");
 		}else{
-			std::string enterBad = netemData[netemCount]["EnterBad"];
-			std::string exitBad = netemData[netemCount]["ExitBad"];
-			std::string goodLoss = netemData[netemCount]["GoodLoss"];
-			std::string badLoss = netemData[netemCount]["BadLoss"];
+			const std::string enterBad = netemData[netemCount]["EnterBad"];
+			const std::string exitBad = netemData[netemCount]["ExitBad"];
+			const std::string goodLoss = netemData[netemCount]["GoodLoss"];
+			const std::string badLoss = netemData[netemCount]["BadLoss"];
 			callGENetem(mode, latency, enterBad, exitBad, goodLoss, badLoss);
 		}//else
 	}else{
-		std::string packetLoss = netemData[netemCount]["PacketLoss"];
+		const std::string packetLoss = netemData[netemCount]["PacketLoss"];
 		callNetem(mode, latency, packetLoss);
 	}//else
 }//invokeNetem
 
-int Benchmark::setNextNetemFrame(int netemCount)
+const short Benchmark::setNextNetemFrame(const short netemCount)
 {
 	if(!netemData[netemCount]["Frame"].is_null())
 	{	//set the next frame we need to invoke it
-		std::string nextNetemFrame = netemData[netemCount]["Frame"];
+		const std::string nextNetemFrame = netemData[netemCount]["Frame"];
 		return stoi(nextNetemFrame);
 	}else{
 		//no more netem data do use, so set 
@@ -387,7 +387,7 @@ int Benchmark::setNextNetemFrame(int netemCount)
 	}//else
 }//setNextNetemFrame
 
-void Benchmark::setNetem(int &netemCount, int &nextNetemFrame)
+const void Benchmark::setNetem(short &netemCount, short &nextNetemFrame)
 {
 	std::string netemFrame;
 	if(netemCount == 0)
@@ -406,13 +406,12 @@ void Benchmark::setNetem(int &netemCount, int &nextNetemFrame)
 		netemCount++;
 		nextNetemFrame = setNextNetemFrame(netemCount);
 	//if this is the firsts netem application and it doesn't need to be invoked on this frame
-	}else if(netemCount == 0){
+	}else if(netemCount == 0)
 		//set the next frame correctly
 		nextNetemFrame = setNextNetemFrame(netemCount);
-	}//else
 }//setNetemStart
 
-int Benchmark::simulateRun(Settings &CurrentSettings)
+short Benchmark::simulateRun(Settings CurrentSettings)
 {	//set up network devices
 	if(setDevices() == -1)
 	{
@@ -420,8 +419,8 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 		return -1;
 	}//if
 
-	int nextNetemFrame = 0;
-	int netemCount = 0;
+	short nextNetemFrame = 0;
+	short netemCount = 0;
 
 	//set network emulation from start if needed
 	if(CurrentSettings.getSetting(APPLYNETEM) == "y")
@@ -486,16 +485,18 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 
 	//to hows how much time has passed so far, initialize now
 	//to reduce time between program launch and output reads
-	int timer = 0;
-	int frames = 0;
-	int totalFrames = 0;
-	int framerate = std::stoi(CurrentSettings.getSetting(FPS));
+	short timer = 0;
+	short frames = 0;
+	short totalFrames = 0;
+	const short framerate = std::stoi(CurrentSettings.getSetting(FPS));
 	bool first = true;
 
 	ba::streambuf client_buffer;
 
 	//convert relative path to absolute path
 	std::string input = std::filesystem::absolute(CurrentSettings.getSetting(PLAYERINPUT1));
+
+	exe = std::filesystem::absolute(CurrentSettings.getSetting(CLIENT));
 
 	//run client 1
 	bp::process client1(
@@ -594,7 +595,7 @@ int Benchmark::simulateRun(Settings &CurrentSettings)
 	return 0;
 }//simulateRun
 
-float Benchmark::compareRuns()
+const float Benchmark::compareRuns()
 {
 	std::ifstream emulatedRun("emulatedRun");
 	std::ifstream simulatedRun("simulatedRun");

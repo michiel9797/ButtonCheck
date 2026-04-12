@@ -17,46 +17,46 @@ class Benchmark
 {
 	public:
 		//constructor that reads in settings for the deconstructor
-		Benchmark(Settings &CurrentSettings);
+		Benchmark(Settings CurrentSettings);
 		//deconstructor that deletes any remaining files made at runtime
 		~Benchmark();
 		//start the benchmark given the selected settings
-		int startBenchmark(Settings &CurrentSettings);
+		int startBenchmark(Settings CurrentSettings);
 
 	private:
 		//check if all the required settings are set for the
 		//attempted run (may still fail later if values are bad)
-		int checkSettings(Settings &CurrentSettings);
+		const short checkSettings(Settings CurrentSettings);
 		//execute an emulated perfect run to gather correct
 		//reference data and the cpu usage baseline
-		int emulateRun(Settings &CurrentSettings);
+		short emulateRun(Settings CurrentSettings);
 		//execute a simulated run with network simulation
-		int simulateRun(Settings &CurrentSettings);
+		short simulateRun(Settings CurrentSettings);
 		//compare both runs, return the accuracy
-		float compareRuns();
+		const float compareRuns();
 		//a helper for migrating to Boost V2
-		auto boostCall(std::string exe, std::vector<std::string> args);
+		auto boostCall(const std::string exe, const std::vector<std::string> args);
 		//set up the server and client veth pairs
-		int setDevices();
+		const short setDevices();
 		//calculate the chance of entering the bad state in the
 		//Gilbert-Elliott model when using the simplified json structure
-		std::string getEnterBadState(std::string avgBurstLength, std::string errorRate);
+		const std::string getEnterBadState(const std::string avgBurstLength, std::string errorRate);
 		//calculate the chance of exiting the bad state in the
 		//Gilbert-Elliott model when using the simplified json structure
-		std::string getExitBadState(std::string avgBurstLength);
+		const std::string getExitBadState(const std::string avgBurstLength);
 		//invoke the correct netem
-		void invokeNetem(int netemCount, std::string mode);
+		const void invokeNetem(const short netemCount, const std::string mode);
 		//helper for calling tc netem when using Gilbert-Elliott
-		void callGENetem(std::string mode, std::string delay, std::string enterBad,
-						 std::string exitBad, std::string goodLoss, std::string badLoss);
+		const void callGENetem(const std::string mode, const std::string delay, const std::string enterBad,
+							   const std::string exitBad, const std::string goodLoss, const std::string badLoss);
 		//helper for calling tc netem normally
-		void callNetem(std::string mode, std::string delay, std::string loss);
+		const void callNetem(const std::string mode, const std::string delay, const std::string loss);
 		//set which frame the next network simulation needs to be called
-		int setNextNetemFrame(int netemCount);
+		const short setNextNetemFrame(const short netemCount);
 		//set the state of the network emulation
-		void setNetem(int &netemCount, int &nextNetemFrame);
+		const void setNetem(short &netemCount, short &nextNetemFrame);
 		//get the total CPU time from rusage
-		double getCPUTime(rusage usage);
+		const double getCPUTime(const rusage usage);
 		//should the emulation run be removed after a benchmark
 		std::string saveEmulation;
 		//should the simulation run be removed after a benchmark

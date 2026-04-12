@@ -8,8 +8,7 @@
 #include "settings.h"
 
 Settings::Settings() 
-{
-	//open the settings file if it exists
+{   //open the settings file if it exists
 	std::fstream settingsFile;
 	settingsFile.open("settings");
 
@@ -35,8 +34,8 @@ Settings::Settings()
 		//load them into the file
 		std::ofstream newSettings("settings");
 
-		for (int i = 0; i < settingsCount; i++)
-			newSettings << settingsList[i] << std::endl;
+		for (short i = 0; i < settingsCount; i++)
+			 newSettings << settingsList[i] << std::endl;
 
 		newSettings.close();
 
@@ -60,11 +59,10 @@ Settings::Settings()
 	settingsList[CUSTOMSERVER] = loadSetting(CUSTOMSERVER);
 
 	return;
-}//constructor
+}//settings
 
-int Settings::setPath(enum Target file)
-{
-	//get path to file
+void Settings::setPath(const enum Target file)
+{   //get path to file
 	std::cout << "path to file: ";
 	std::string path;
 	std::cin >> path;
@@ -89,13 +87,10 @@ int Settings::setPath(enum Target file)
 	//write to correct target
 	settingsList[file] = path;
 	saveSetting(file, path);
-
-	return 0;
 }//setPath
 
-int Settings::setString(enum Target option)
-{
-	//get string
+void Settings::setString(const enum Target option)
+{   //get string
 	std::cout << "string: ";
 	std::string input;
 	std::cin >> input;
@@ -103,13 +98,10 @@ int Settings::setString(enum Target option)
 	//write to correct target
 	settingsList[option] = input;
 	saveSetting(option, input); 
-	
-	return 0;
-}
+}//setString
 
-int Settings::setBool(enum Target option)
-{
-	//get bool (yes or no)
+void Settings::setBool(const enum Target option)
+{   //get bool (yes or no)
 	std::cout << "[y/n]: ";
 	std::string setting;
 	std::cin >> setting;
@@ -124,13 +116,10 @@ int Settings::setBool(enum Target option)
 	//write to correct target
 	settingsList[option] = setting;
 	saveSetting(option, setting);
-
-	return 0;
 }//setBool
 
-int Settings::setUInt(enum Target number)
-{
-	//get uint
+void Settings::setUInt(const enum Target number)
+{   //get uint
 	bool badValue = true;
 	std::cout << "value: ";
 	std::string setting;
@@ -148,26 +137,22 @@ int Settings::setUInt(enum Target number)
 				std::cout << "value: ";
 				std::cin >> setting;
 				break;
-			}
+			}//if
 		}//for
 	}//while
 
 	//write to correct target
 	settingsList[number] = setting;
 	saveSetting(number, setting);
-
-	return 0;
 }//setBool
 
-std::string Settings::getSetting(enum Target option)
-{
-	//return correct settings
+std::string Settings::getSetting(const enum Target option)
+{  //return corresponding settings
 	return settingsList[option];
 }//getSetting
 
-int Settings::saveSetting(enum Target option, std::string setting)
-{
-	//open settings file
+const short Settings::saveSetting(const enum Target option, const std::string setting)
+{   //open settings file
 	std::ifstream readFile;
 	readFile.open("settings");
 	if(!readFile.is_open())
@@ -196,9 +181,8 @@ int Settings::saveSetting(enum Target option, std::string setting)
 	return 0;
 }//saveSetting
 
-std::string Settings::loadSetting(enum Target option)
-{
-	//open settings file
+const std::string Settings::loadSetting(const enum Target option)
+{   //open settings file
 	std::ifstream settingsFile;
 	settingsFile.open("settings");
 	if(!settingsFile.is_open())

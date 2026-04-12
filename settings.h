@@ -30,21 +30,21 @@ class Settings
 		//or makes one if it doesn't exist yet
 		Settings();
 		//set path to target
-		int setPath(enum Target file);
+		void setPath(const enum Target file);
 		//set a string
-		int setString(enum Target option);
+		void setString(const enum Target option);
 		//set a bool
-		int setBool(enum Target option);
+		void setBool(const enum Target option);
 		//set a uint
-		int setUInt(enum Target number);
+		void setUInt(const enum Target number);
 		//return path to target
-		std::string getSetting(enum Target option);
+		const std::string getSetting(const enum Target option);
 
 	private:
 		//save path to target to the settings file, returns -1 on failure
-		int saveSetting(enum Target option, std::string path);
+		const short saveSetting(const enum Target option, const std::string path);
 		//load paths to target from the settings file, returns "" on failure
-		std::string loadSetting(enum Target option);
+		const std::string loadSetting(const enum Target option);
 		//amount of settings, equals lines in the settings file
 		const static int settingsCount = 14;
 		//array containing all settings
