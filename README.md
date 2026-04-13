@@ -42,8 +42,8 @@ Secondly, ButtonCheck expects any underlaying programs to meet the following str
 - Emulation programs will be provided the following commandline inputs:
   1. Executable name, as defined in ButtonChecks menu
   2. EMULATE (to signify it must run in emulation mode)
-  3. The first players input, as defined in ButtonChecks menu
-  4. The second players input, as defined in ButtonChecks menu
+  3. The first players input file, as defined in ButtonChecks menu
+  4. The second players input file, as defined in ButtonChecks menu
 - Emulation programs must start by printing a handshake to the standard commandline:
 ```bash
 EMULATE START
