@@ -11,6 +11,9 @@ The following libraries are required to compile and run this program:
 - [net-tools](https://sourceforge.net/projects/net-tools/#)
 - [libboost-all-dev](https://www.boost.org)
 
+## Building
+Before running the program, compile it using c++20. For a pre-assembled makefile, see the link above.
+
 ## Running the program
 If you want to run the program using its network simulation features, you will have to call it with administrator priviledges.
 
@@ -62,7 +65,6 @@ EMULATE START
   5. The IP the client must use, 10.0.0.2 or 10.0.0.3 respectively
   6. The IP and port the server must use, 10.0.0.1:40000
 - Simulation programs must only print in-order gamestates one line at a time to the standard commandline.
-- For the timer displayed by ButtonCheck during simulation, 60fps is expected. Other framerates will still work, but this timer may be unreliable in such cases.
 - Simulation programs may print errors, only the errors of the instance to which network emulation is applied will be shown.
 - Simulation programs must end by themselves.
 
