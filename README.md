@@ -10,6 +10,7 @@ A simple generic 2D fighting game made for the purposes of this benchmark can be
 The following libraries are required to compile and run this program:
 - [net-tools](https://sourceforge.net/projects/net-tools/#)
 - [libboost-all-dev](https://www.boost.org)
+
 **NOTE:** You will need to have Boost version 1.88 or greater installed to compile this program
 
 ## Building
