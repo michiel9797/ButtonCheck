@@ -38,7 +38,7 @@ class Settings
 		//set a uint
 		void setUInt(const enum Target number);
 		//return path to target
-		const std::string getSetting(const enum Target option);
+		std::string getSetting(const enum Target option);
 
 	private:
 		//save path to target to the settings file, returns -1 on failure

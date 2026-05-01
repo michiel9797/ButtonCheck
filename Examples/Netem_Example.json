@@ -1,0 +1,31 @@
+[
+	{
+		"//comment": "use this structure for fully random packet loss",
+		"Frame": "0",
+		"Delay": "0ms",
+		"PacketLoss": "5%" 
+	}
+]
+[
+	{
+		"//comment": "use this structure when applying 
+					  the Gilbert-Elliott packet loss model",
+		"Frame": "0",
+		"Delay": "0ms",
+		"AvgBurstLength": "5",
+		"ErrorRate": "5%"
+	}
+]
+[
+	{
+		"//comment": "alternatively, use this structure to define the chance to enter
+					  the bad state and to stay in the bad state by hand. The loss in both
+					  the good and bad state will have to be defined as well",
+		"Frame": "0",
+		"Delay": "0ms",
+		"EnterBad": "20%",
+		"ExitBad": "50",
+		"GoodLoss": "2%",
+		"BadLoss": "90%"
+	}
+]
