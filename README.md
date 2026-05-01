@@ -11,6 +11,11 @@ The following libraries are required to compile and run this program:
 - [net-tools](https://sourceforge.net/projects/net-tools/#)
 - [libboost-all-dev](https://www.boost.org)
 
+**NOTE:** You will need to have Boost version 1.88 or greater installed to compile this program
+
+## Building
+Before running the program, compile it using c++20. For a pre-assembled makefile, see the link above.
+
 ## Running the program
 If you want to run the program using its network simulation features, you will have to call it with administrator priviledges.
 
@@ -26,6 +31,15 @@ It can also be called this way:
 ```
 When calling as such, the program will immediately run a test with the settings as found in the setting file.
 For more information on how to use -F, call the program with --help.
+
+## Running with Benchy Fighters
+In order to run tests using Benchy Fighters, some of the following options need to be set:
+- For the client and server executable, insert the path to where the BenchyFighters executable is located
+- For the client inputs, insert the path to the inputs generated with the timestampedkeylogger
+- For the custom arguments of both the client and server (found in the extra options menu), choose either YOJIMBO, GNS or RAKNET. Both client and server need the same custom argument
+
+## Netem files
+An example netem file called "Netem_Example.json" can be found in the "Examples" folder. Use it to create your own netem json file and set the path to it as the netem file to use.
 
 ## Custom game support
 ButtonCheck can support different games then the one provided, though there are a set of restrictions and requirements.
@@ -62,7 +76,6 @@ EMULATE START
   5. The IP the client must use, 10.0.0.2 or 10.0.0.3 respectively
   6. The IP and port the server must use, 10.0.0.1:40000
 - Simulation programs must only print in-order gamestates one line at a time to the standard commandline.
-- For the timer displayed by ButtonCheck during simulation, 60fps is expected. Other framerates will still work, but this timer may be unreliable in such cases.
 - Simulation programs may print errors, only the errors of the instance to which network emulation is applied will be shown.
 - Simulation programs must end by themselves.
 
