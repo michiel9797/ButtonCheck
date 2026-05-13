@@ -452,7 +452,7 @@ short Benchmark::simulateRun(Settings CurrentSettings)
 			"10.0.0.1:40000",	//the IP and port the server must use
 			CurrentSettings.getSetting(CUSTOMSERVER)
 		},						
-		bp::process_stdio{nullptr, server_pipe, {}}   //!!!REMOVE!!!
+		bp::process_stdio{nullptr, server_pipe, {}}
 	);
 
 	ba::streambuf server_buffer;
@@ -492,7 +492,7 @@ short Benchmark::simulateRun(Settings CurrentSettings)
 	bool first = true;
 
 	ba::streambuf client_buffer;
-
+	
 	//convert relative path to absolute path
 	std::string input = std::filesystem::absolute(CurrentSettings.getSetting(PLAYERINPUT1));
 
@@ -514,7 +514,7 @@ short Benchmark::simulateRun(Settings CurrentSettings)
 			"10.0.0.1:40000",		//the IP and port the server must use
 			CurrentSettings.getSetting(CUSTOMCLIENT)
 		},
-		bp::process_stdio{nullptr, nullptr, nullptr}
+		bp::process_stdio{nullptr, client_pipe, {}}
 	);
 
 	//convert relative path to absolute path
@@ -536,7 +536,7 @@ short Benchmark::simulateRun(Settings CurrentSettings)
 			"10.0.0.1:40000",			//the IP and port the server must use
 			CurrentSettings.getSetting(CUSTOMCLIENT)
 		},
-		bp::process_stdio{nullptr, client_pipe, {}}
+		bp::process_stdio{nullptr, nullptr, {}}
 	);
 
 	std::cout << "Running simulation" << std::endl;
