@@ -166,6 +166,7 @@ short Benchmark::emulateRun(Settings CurrentSettings)
 	//to reduce time between program launch and output reads
 	short timer = 0;
 	short frames = 0;
+	short totalFrames = 0;
 	const short framerate = std::stoi(CurrentSettings.getSetting(FPS));
 	bool connected = false;
 	bool first = true;
@@ -211,6 +212,7 @@ short Benchmark::emulateRun(Settings CurrentSettings)
 			if(!received.empty())
 			{
 				frames++;
+				totalFrames++;
 				if(first)
 				{
 					output << received;
@@ -235,6 +237,11 @@ short Benchmark::emulateRun(Settings CurrentSettings)
 	emulationTime = getCPUTime(usage);
 
 	std::cout << std::endl << "Emulation finished" << std::endl;
+	
+	if(CurrentSettings.getSetting(FINALFRAMECOUNT) == "y")
+	{
+	  std::cout << "Frames received: " << totalFrames << std::endl;
+	}//if
 
 	return 0;
 }//simulatedRun
@@ -591,6 +598,11 @@ short Benchmark::simulateRun(Settings CurrentSettings)
 	simulationTime = getCPUTime(usage);
 
 	std::cout << std::endl << "Simulation finished" << std::endl;
+	
+	if(CurrentSettings.getSetting(FINALFRAMECOUNT) == "y")
+	{
+	  std::cout << "Frames received: " << totalFrames << std::endl;
+	}//if
 
 	return 0;
 }//simulateRun

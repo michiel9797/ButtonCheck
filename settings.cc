@@ -27,6 +27,7 @@ Settings::Settings()
 		settingsList[SAVESIMULATION] = "n";
 		settingsList[APPLYNETEM] = "y";
 		settingsList[GILBERTELLIOTT] = "n";
+		settingsList[FINALFRAMECOUNT] = "n";
 		settingsList[FPS] =  "60";
 		settingsList[CUSTOMCLIENT] = "";
 		settingsList[CUSTOMSERVER] = "";
@@ -54,6 +55,7 @@ Settings::Settings()
 	settingsList[SAVESIMULATION] = loadSetting(SAVESIMULATION);
 	settingsList[APPLYNETEM] = loadSetting(APPLYNETEM);
 	settingsList[GILBERTELLIOTT] = loadSetting(GILBERTELLIOTT);
+	settingsList[FINALFRAMECOUNT] = loadSetting(FINALFRAMECOUNT);
 	settingsList[FPS] =  loadSetting(FPS);
 	settingsList[CUSTOMCLIENT] = loadSetting(CUSTOMCLIENT);
 	settingsList[CUSTOMSERVER] = loadSetting(CUSTOMSERVER);

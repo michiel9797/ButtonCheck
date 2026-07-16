@@ -22,6 +22,7 @@ void subMenu(Settings &CurrentSettings)
 		<< "| Save simulation file? 	(y/n)	" << CurrentSettings.getSetting(SAVESIMULATION) << std::endl
 		<< "| Apply network emulation?  	(y/n)	" << CurrentSettings.getSetting(APPLYNETEM) << std::endl
 		<< "| Use Gilbert-Elliott model?	(y/n)	" << CurrentSettings.getSetting(GILBERTELLIOTT) << std::endl
+		<< "| Display final frame count?    (y/n)   " << CurrentSettings.getSetting(FINALFRAMECOUNT) << std::endl
 		<< "| FPS of the client program		" << CurrentSettings.getSetting(FPS) << std::endl
 		<< "| Custom client call field		" << CurrentSettings.getSetting(CUSTOMCLIENT) << std::endl
 		<< "| Custom server call field		" << CurrentSettings.getSetting(CUSTOMSERVER) << std::endl
@@ -32,10 +33,11 @@ void subMenu(Settings &CurrentSettings)
 		<< "4: Set save simulation" << std::endl
 		<< "5: Set apply network emulation" << std::endl
 		<< "6: Set Gilbert-Elliott model" << std::endl
-		<< "7: Set client FPS" << std::endl
-		<< "8: Set custom client call field" << std::endl
-		<< "9: Set custom server call field" << std::endl
-		<< "10: Return to main menu" << std::endl;
+		<< "7: Set final frame count display" << std::endl
+		<< "8: Set client FPS" << std::endl
+		<< "9: Set custom client call field" << std::endl
+		<< "10: Set custom server call field" << std::endl
+		<< "11: Return to main menu" << std::endl;
 		std::cout << "Choose option: ";
 		std::string input;
 		std::cin >> input;
@@ -66,18 +68,22 @@ void subMenu(Settings &CurrentSettings)
 				CurrentSettings.setBool(GILBERTELLIOTT);
 				break;
 			case 7:
+			        std::cout << std::endl;
+			        CurrentSettings.setBool(FINALFRAMECOUNT);
+			        break;
+			case 8:
 				std::cout << std::endl;
 				CurrentSettings.setUInt(FPS);
 				break;
-			case 8:
+			case 9:
 				std::cout << std::endl;
 				CurrentSettings.setString(CUSTOMCLIENT);
 				break;
-			case 9:
+			case 10:
 				std::cout << std::endl;
 				CurrentSettings.setString(CUSTOMSERVER);
 				break;
-			case 10:
+			case 11:
 				std::cout << std::endl;
 				runSubMenu = false;
 				break;

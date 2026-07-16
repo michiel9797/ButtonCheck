@@ -18,6 +18,7 @@ enum Target
 	SAVESIMULATION,
 	APPLYNETEM,
 	GILBERTELLIOTT,
+	FINALFRAMECOUNT,
 	FPS,
 	CUSTOMCLIENT,
 	CUSTOMSERVER
@@ -46,7 +47,7 @@ class Settings
 		//load paths to target from the settings file, returns "" on failure
 		const std::string loadSetting(const enum Target option);
 		//amount of settings, equals lines in the settings file
-		const static int settingsCount = 14;
+		const static int settingsCount = 15;
 		//array containing all settings
 		//0:  path to client
 		//1:  path to server
@@ -59,9 +60,10 @@ class Settings
 		//8:  should the simulation run file be saved
 		//9:  should network emulation be applied
 		//10: should the Gilbert-Elliott packet loss model be applied
-		//11: fps the client program runs at
-		//12: custom client call argument
-		//13: custom server call argument
+		//11: Should the final framecount be displayed?
+		//12: fps the client program runs at
+		//13: custom client call argument
+		//14: custom server call argument
 		std::string settingsList[settingsCount];
 };//settings
 
