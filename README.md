@@ -4,6 +4,9 @@ A benchmark for testing Netcodes, primarily focussed on information accuracy for
 You can find a repository with Makefiles to compile this project here:
 - https://github.com/michiel9797/Michiels-Makefiles/tree/master
 
+For a thorough explanation on the design of the program, see section 4.2 of the accompanying thesis linked here: 
+- [ButtonCheck: a Framework to Benchmark the Performance of Netcodes for Fighting Games](https://theses.liacs.nl/3881)
+
 A simple generic 2D fighting game made for the purposes of this benchmark can be found here:
 - [Benchy-Fighters](https://github.com/michiel9797/Benchy-Fighters)
 
