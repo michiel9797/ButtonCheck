@@ -38,7 +38,7 @@ For more information on how to use -F, call the program with --help.
 ## Running with Benchy Fighters
 In order to run tests using Benchy Fighters, some of the following options need to be set:
 - For the client and server executable, insert the path to where the BenchyFighters executable is located
-- For the client inputs, insert the path to the inputs generated with the timestampedkeylogger
+- For the client inputs, insert the path to the inputs generated with the [timestampedkeylogger](https://github.com/michiel9797/timestampedKeylogger)
 - For the custom arguments of both the client and server (found in the extra options menu), choose either YOJIMBO, GNS or RAKNET. Both client and server need the same custom argument
 
 ## Netem files
